@@ -1,10 +1,7 @@
+import ClientPage from "./modules/cliente/pages/ClientPage";
+
 function App() {
-  return (
-    <main className="app-shell">
-      <h1>Ecommerce</h1>
-      <p>Frontend React + Vite configurado.</p>
-    </main>
-  )
+  return <ClientPage />;
 }
 
-export default App
+export default App;
