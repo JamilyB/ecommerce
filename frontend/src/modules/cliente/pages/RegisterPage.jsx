@@ -1,45 +1,88 @@
 import { useState } from 'react';
-import { CreditCard, Check } from 'lucide-react';
+import { Plus, Trash2, CreditCard, Check } from 'lucide-react';
 
 import PersonalDataForm from '../components/PersonalDataForm';
 import AddressForm from '../components/AddressForm';
 import CardForm from '../components/CardForm';
 
+const createEmptyAddress = () => ({
+  id: Date.now(),
+  label: '',
+  residenceType: '',
+  streetType: '',
+  street: '',
+  number: '',
+  neighborhood: '',
+  cep: '',
+  city: '',
+  state: '',
+  country: 'Brasil',
+  observations: '',
+  isShipping: true,
+  isBilling: true,
+});
+
 const RegisterPage = () => {
   const [personalData, setPersonalData] = useState({
+    gender: '',
     fullName: '',
     email: '',
-    phone: '',
+    phoneType: '',
+    phoneDDD: '',
+    phoneNumber: '',
     cpf: '',
     birthDate: '',
     password: '',
     confirmPassword: '',
   });
 
-  const [address, setAddress] = useState({
-    cep: '',
-    street: '',
-    number: '',
-    complement: '',
-    city: '',
-    state: '',
-  });
+  const [addresses, setAddresses] = useState([
+    createEmptyAddress(),
+  ]);
 
   const [card, setCard] = useState({
     cardNumber: '',
     holderName: '',
-    expiry: '',
+    brand: '',
     cvv: '',
+    isPreferred: false,
   });
 
   const [addCard, setAddCard] = useState(false);
+
+  const addAddress = () => {
+    if (addresses.length >= 2) return;
+
+    setAddresses((prev) => [
+      ...prev,
+      createEmptyAddress(),
+    ]);
+  };
+
+  const removeAddress = (id) => {
+    if (addresses.length === 1) return;
+
+    setAddresses((prev) =>
+      prev.filter((address) => address.id !== id)
+    );
+  };
+
+  const updateAddress = (id, updatedAddress) => {
+    setAddresses((prev) =>
+      prev.map((address) =>
+        address.id === id
+          ? updatedAddress
+          : address
+      )
+    );
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     console.log({
       personalData,
-      address,
+      addresses,
       card: addCard ? card : null,
     });
   };
@@ -64,7 +107,6 @@ const RegisterPage = () => {
 
       </div>
 
-
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* DADOS + ENDEREÇO */}
@@ -72,19 +114,71 @@ const RegisterPage = () => {
 
           {/* DADOS PESSOAIS */}
           <div className="bg-white rounded-2xl p-6 border border-[#E4C7B7]/30">
+
             <PersonalDataForm
               form={personalData}
               setForm={setPersonalData}
             />
+
           </div>
 
 
-          {/* ENDEREÇO */}
-          <div className="bg-white rounded-2xl p-6 border border-[#E4C7B7]/30">
-            <AddressForm
-              form={address}
-              setForm={setAddress}
-            />
+          {/* ENDEREÇOS */}
+          <div className="space-y-4">
+
+            {addresses.map((address, index) => (
+
+              <div
+                key={address.id}
+                className="bg-white rounded-2xl p-6 border border-[#E4C7B7]/30"
+              >
+
+                {/* Cabeçalho do endereço */}
+                <div className="flex items-center justify-between mb-5">
+
+                  <h2 className="font-serif text-lg font-semibold text-[#56443F]">
+                    Endereço {index + 1}
+                  </h2>
+
+                  {addresses.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeAddress(address.id)}
+                      className="flex items-center gap-1 text-xs font-bold text-[#A28776] hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={13} />
+                      Remover
+                    </button>
+                  )}
+
+                </div>
+
+                <AddressForm
+                  form={address}
+                  setForm={(updatedAddress) =>
+                    updateAddress(
+                      address.id,
+                      updatedAddress
+                    )
+                  }
+                />
+
+              </div>
+
+            ))}
+
+            {/* Adicionar segundo endereço */}
+            {addresses.length < 2 && (
+              <button
+                type="button"
+                onClick={addAddress}
+                className="w-full py-3 border border-dashed border-[#E4C7B7] rounded-2xl text-xs font-bold uppercase tracking-wider text-[#8B645A] hover:bg-[#E4C7B7]/10 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus size={14} />
+                Adicionar outro endereço
+              </button>
+            )}
+
           </div>
 
         </div>
@@ -103,6 +197,7 @@ const RegisterPage = () => {
               />
 
               <div>
+
                 <h2 className="font-serif text-lg font-semibold text-[#56443F]">
                   Cartão
                 </h2>
@@ -110,6 +205,7 @@ const RegisterPage = () => {
                 <p className="text-[10px] text-[#A28776] font-semibold">
                   Opcional
                 </p>
+
               </div>
 
             </div>
@@ -119,7 +215,9 @@ const RegisterPage = () => {
               <input
                 type="checkbox"
                 checked={addCard}
-                onChange={(e) => setAddCard(e.target.checked)}
+                onChange={(e) =>
+                  setAddCard(e.target.checked)
+                }
                 className="w-4 h-4 accent-[#8B645A]"
               />
 
@@ -133,10 +231,12 @@ const RegisterPage = () => {
 
           {addCard && (
             <div className="mt-5 pt-5 border-t border-[#E4C7B7]/30">
+
               <CardForm
                 form={card}
                 setForm={setCard}
               />
+
             </div>
           )}
 

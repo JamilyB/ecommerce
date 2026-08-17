@@ -1,8 +1,17 @@
+import { CreditCard } from 'lucide-react';
 import FormField from './FormField';
 
 const CardForm = ({ form, setForm }) => {
   return (
     <div className="space-y-4">
+
+      <div className="flex items-center gap-2 mb-2">
+        <CreditCard size={16} className="text-[#8B645A]" />
+
+        <h2 className="font-serif text-lg font-semibold text-[#56443F]">
+          Cartão
+        </h2>
+      </div>
 
       <FormField
         label="Número do Cartão"
@@ -17,7 +26,7 @@ const CardForm = ({ form, setForm }) => {
       />
 
       <FormField
-        label="Nome no Cartão"
+        label="Nome impresso no cartão"
         value={form.holderName}
         onChange={(v) =>
           setForm((prev) => ({
@@ -28,31 +37,69 @@ const CardForm = ({ form, setForm }) => {
         placeholder="NOME COMPLETO"
       />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="text-[10px] uppercase tracking-wider text-[#A28776] font-bold block mb-1.5">
+          Bandeira
+        </label>
 
-        <FormField
-          label="Validade"
-          value={form.expiry}
-          onChange={(v) =>
+        <select
+          value={form.brand}
+          onChange={(e) =>
             setForm((prev) => ({
               ...prev,
-              expiry: v,
+              brand: e.target.value,
             }))
           }
-          placeholder="12/28"
-        />
+          className="w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border border-[#E4C7B7]/40 rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] transition-colors"
+        >
+          <option value="">Selecione a bandeira</option>
+          <option value="Visa">Visa</option>
+          <option value="Mastercard">Mastercard</option>
+          <option value="Elo">Elo</option>
+          <option value="American Express">American Express</option>
+        </select>
+      </div>
 
-        <FormField
-          label="CVV"
-          value={form.cvv}
-          onChange={(v) =>
-            setForm((prev) => ({
-              ...prev,
-              cvv: v,
-            }))
-          }
-          placeholder="123"
-        />
+      <FormField
+        label="Código de segurança (CVV)"
+        value={form.cvv}
+        onChange={(v) =>
+          setForm((prev) => ({
+            ...prev,
+            cvv: v,
+          }))
+        }
+        placeholder="123"
+      />
+
+      <div className="pt-3 border-t border-[#E4C7B7]/30">
+
+        <label className="flex items-center gap-3 cursor-pointer">
+
+          <input
+            type="radio"
+            name="preferredCard"
+            checked={form.isPreferred}
+            onChange={() =>
+              setForm((prev) => ({
+                ...prev,
+                isPreferred: true,
+              }))
+            }
+            className="w-4 h-4 accent-[#8B645A]"
+          />
+
+          <div>
+            <p className="text-xs font-bold text-[#56443F]">
+              Cartão preferencial
+            </p>
+
+            <p className="text-[10px] text-[#A28776] font-semibold">
+              Usar este cartão como principal
+            </p>
+          </div>
+
+        </label>
 
       </div>
 
