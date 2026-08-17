@@ -1,7 +1,8 @@
-import ClientPage from "./modules/cliente/pages/ClientPage";
+import { ProfilePage } from "./modules/cliente/pages/ProfilePage";
+import RegisterPage from "./modules/cliente/pages/RegisterPage";
 
 function App() {
-  return <ClientPage />;
+  return <RegisterPage/>;
 }
 
 export default App;
