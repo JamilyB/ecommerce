@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   X,
   Minus,
@@ -12,13 +13,52 @@ export default function CartDrawer({
   onClose,
   onCheckout,
 }) {
-  if (!isOpen) return null;
+  const [cart, setCart] = useState(cartMock);
 
-  const cart = cartMock;
+  if (!isOpen) return null;
 
   const cartTotal = cart.reduce((total, item) => {
     return total + item.product.price * item.quantity;
   }, 0);
+
+  // Aumentar quantidade
+  const increaseQuantity = (productId) => {
+    setCart((currentCart) =>
+      currentCart.map((item) =>
+        item.product.id === productId
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item
+      )
+    );
+  };
+
+  // Diminuir quantidade
+  const decreaseQuantity = (productId) => {
+    setCart((currentCart) =>
+      currentCart
+        .map((item) =>
+          item.product.id === productId
+            ? {
+                ...item,
+                quantity: item.quantity - 1,
+              }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  };
+
+  // Remover produto
+  const removeItem = (productId) => {
+    setCart((currentCart) =>
+      currentCart.filter(
+        (item) => item.product.id !== productId
+      )
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -113,7 +153,12 @@ export default function CartDrawer({
 
                     <div className="flex items-center gap-2 bg-[#FAF9F5] rounded-lg px-1.5 py-0.5">
 
-                      <button>
+                      <button
+                        onClick={() =>
+                          decreaseQuantity(item.product.id)
+                        }
+                        className="hover:text-[#8B645A]"
+                      >
                         <Minus size={10} />
                       </button>
 
@@ -121,13 +166,23 @@ export default function CartDrawer({
                         {item.quantity}
                       </span>
 
-                      <button>
+                      <button
+                        onClick={() =>
+                          increaseQuantity(item.product.id)
+                        }
+                        className="hover:text-[#8B645A]"
+                      >
                         <Plus size={10} />
                       </button>
 
                     </div>
 
-                    <button className="text-[10px] text-red-400 hover:text-red-500">
+                    <button
+                      onClick={() =>
+                        removeItem(item.product.id)
+                      }
+                      className="text-[10px] text-red-400 hover:text-red-500"
+                    >
                       Remover
                     </button>
 
