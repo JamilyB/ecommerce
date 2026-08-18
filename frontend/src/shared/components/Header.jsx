@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Menu,
-  X,
-  ShoppingBag,
-  User,
-  History,
-  Package,
-  Settings,
-  Flame,
-} from "lucide-react";
+import { Menu, X, ShoppingBag, User, History, Package, Settings, Flame, } from "lucide-react";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,8 +31,7 @@ export default function Header() {
         <Flame size={12} className="text-[#8B645A]" />
 
         <span>
-          Velas aromáticas esculpidas à mão • Frete grátis em pedidos acima de
-          R$ 180
+          Velas aromáticas esculpidas
         </span>
       </div>
 
