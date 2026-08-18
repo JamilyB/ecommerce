@@ -7,6 +7,7 @@ import {
 
 import ProductCard from "../components/ProductCard";
 import { productMock } from "../mocks/productMock";
+import IAChat from "../../recomendacao/components/IAChat";
 
 export default function CatalogPage() {
 
@@ -21,7 +22,8 @@ export default function CatalogPage() {
     maxPrice: 130,
   });
 
-  const [showMessage, setShowMessage] = useState(false);
+ // const [showMessage, setShowMessage] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const updateFilter = (key, value) => {
     setFilters((previous) => ({
@@ -163,7 +165,7 @@ export default function CatalogPage() {
 
             {/* Botão */}
             <button
-            onClick={() => setShowMessage(true)}
+              onClick={() => setIsChatOpen(true)}
             className="shrink-0 px-5 py-2.5 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-[10px] font-bold tracking-wider uppercase transition-colors inline-flex items-center gap-2"
             >
             <MessageSquare size={13} />
@@ -172,12 +174,6 @@ export default function CatalogPage() {
 
         </div>
 
-        {/* Mensagem do protótipo */}
-        {showMessage && (
-            <p className="text-[10px] text-[#8B645A] font-semibold text-center mt-3">
-            Assistente de IA disponível em uma próxima etapa do protótipo.
-            </p>
-        )}
         </section>
 
       {/* Coleções */}
@@ -426,9 +422,12 @@ export default function CatalogPage() {
           )}
 
         </section>
-
       </div>
-
+      <IAChat
+        isOpen={isChatOpen}
+        onOpen={() => setIsChatOpen(true)}
+        onClose={() => setIsChatOpen(false)}
+      />
     </div>
   );
 }

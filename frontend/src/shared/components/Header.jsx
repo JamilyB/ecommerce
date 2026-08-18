@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { Menu, X, ShoppingBag, User, History, Package, Settings, Flame, } from "lucide-react";
+import {
+  Menu,
+  X,
+  ShoppingBag,
+  User,
+  History,
+  Package,
+  Settings,
+  Flame,
+} from "lucide-react";
+
+import CartDrawer from "../../modules/vendas/components/CartDrawer";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -136,6 +147,7 @@ export default function Header() {
                     />
                     Perfil & Configurações
                   </button>
+
                 </div>
               )}
             </div>
@@ -153,27 +165,8 @@ export default function Header() {
                 {/* Indicador visual da sacola */}
                 <span className="absolute top-1 right-1 w-2 h-2 bg-[#8B645A] rounded-full" />
               </button>
-
-              {/* Mini sacola */}
-              {cartOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-[#FAF9F5] border border-[#E4C7B7]/40 rounded-xl shadow-lg z-50 p-4 text-left">
-                  <p className="text-xs uppercase tracking-wider text-[#A28776] font-bold mb-2">
-                    Sua sacola
-                  </p>
-
-                  <p className="text-sm text-[#56443F]">
-                    Sua sacola está vazia.
-                  </p>
-
-                  <button
-                    onClick={() => handleNavigation("shop")}
-                    className="mt-4 w-full bg-[#56443F] hover:bg-[#8B645A] text-white text-xs font-bold uppercase rounded-lg py-2.5 transition-colors"
-                  >
-                    Explorar produtos
-                  </button>
-                </div>
-              )}
             </div>
+
           </div>
         </div>
       </header>
@@ -183,8 +176,10 @@ export default function Header() {
         <div className="fixed inset-0 bg-[#F1F0E2] z-50 flex flex-col p-8 justify-between">
 
           <div>
+
             {/* Cabeçalho */}
             <div className="flex justify-between items-center mb-12">
+
               <span className="font-serif text-2xl font-bold text-[#56443F]">
                 JASMIN
               </span>
@@ -196,6 +191,7 @@ export default function Header() {
               >
                 <X size={24} />
               </button>
+
             </div>
 
             {/* Navegação mobile */}
@@ -242,11 +238,32 @@ export default function Header() {
               >
                 Perfil & Configurações
               </button>
+
+              {/* Sacola no mobile */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setCartOpen(true);
+                }}
+                className="text-left py-2.5 border-b border-[#E4C7B7]/20 hover:text-[#8B645A] text-[#56443F]"
+              >
+                Sacola
+              </button>
+
             </nav>
           </div>
-          
+
         </div>
       )}
+
+      {/* Carrinho */}
+      <CartDrawer
+        isOpen={cartOpen}
+        onClose={() => setCartOpen(false)}
+        onCheckout={() => {
+          console.log("Ir para checkout");
+        }}
+      />
     </>
   );
 }
