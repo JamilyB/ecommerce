@@ -1,618 +1,1119 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import {
-  TrendingUp,
-  ShoppingCart,
-  Users,
-  Package,
-  ArrowUpRight,
-  ArrowDownRight,
-  AlertCircle,
-  Clock,
-  Eye,
+  Download,
+  CalendarDays,
+  ChevronDown,
 } from "lucide-react";
 
 import AdminLayout from "../components/AdminLayout";
-import { dashboardMock } from "../mocks/dashboardMock";
-import { productsMock } from "../mocks/productsMock";
+import { ordersMock } from "../mocks/ordersMock";
 
-const fmtBRL = (value) => {
-  return value.toLocaleString("pt-BR", {
+/* =========================================================
+   CORES DAS CATEGORIAS
+========================================================= */
+
+const categoryColors = [
+  "#2563EB", // azul
+  "#16A34A", // verde
+  "#9333EA", // roxo
+  "#EA580C", // laranja
+  "#DB2777", // rosa
+  "#0891B2", // ciano
+];
+
+/* =========================================================
+   FORMATAÇÃO
+========================================================= */
+
+const formatBRL = (value) => {
+  return Number(value || 0).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 };
 
-/* =========================================================
-   CONFIGURAÇÃO DOS STATUS
-========================================================= */
+const formatShortBRL = (value) => {
+  const number = Number(value || 0);
 
-const orderStatusConfig = {
-  pending: {
-    label: "Pendente",
-    className: "bg-amber-50 text-amber-700 border-amber-200",
-  },
+  if (number >= 1000000) {
+    return `R$ ${(number / 1000000).toFixed(1).replace(".", ",")} mi`;
+  }
 
-  confirmed: {
-    label: "Confirmado",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
-  },
+  if (number >= 1000) {
+    return `R$ ${(number / 1000).toFixed(0)} mil`;
+  }
 
-  processing: {
-    label: "Processando",
-    className: "bg-purple-50 text-purple-700 border-purple-200",
-  },
+  return `R$ ${number.toFixed(0)}`;
+};
 
-  shipped: {
-    label: "Enviado",
-    className: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  },
+const formatMonth = (date) => {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(
+    "pt-BR",
+    {
+      month: "short",
+      year: "numeric",
+    }
+  );
+};
 
-  delivered: {
-    label: "Entregue",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-
-  cancelled: {
-    label: "Cancelado",
-    className: "bg-red-50 text-red-700 border-red-200",
-  },
+const formatMonthFull = (date) => {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(
+    "pt-BR",
+    {
+      month: "long",
+      year: "numeric",
+    }
+  );
 };
 
 /* =========================================================
-   CARD DE INDICADOR
+   CATEGORIA
 ========================================================= */
+const getCategory = (item) => {
+  if (item.category) {
+    return item.category;
+  }
 
-function StatCard({
-  title,
-  value,
-  change,
-  icon: Icon,
-}) {
-  const positive = change >= 0;
+  if (item.category_name) {
+    return item.category_name;
+  }
+  const categoryMap = {
+    "Vela Relaxar": "Relaxamento",
+    "Vela Café": "Gourmet",
+    "Vela Gourmet": "Gourmet",
+    "Vela Natureza": "Natureza",
+    "Vela Floral": "Floral",
+    "Vela Luxo": "Luxo",
+  };
 
-  return (
-    <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm p-5">
-
-      <div className="flex items-start justify-between">
-
-        <div>
-
-          <p className="text-xs font-semibold text-[#A28776] mb-1">
-            {title}
-          </p>
-
-          <p className="text-2xl font-bold text-[#56443F]">
-            {value}
-          </p>
-
-          {change !== undefined && (
-            <div
-              className={`flex items-center gap-1 text-xs font-semibold mt-1.5 ${
-                positive
-                  ? "text-emerald-600"
-                  : "text-red-500"
-              }`}
-            >
-              {positive ? (
-                <ArrowUpRight size={14} />
-              ) : (
-                <ArrowDownRight size={14} />
-              )}
-
-              <span>
-                {Math.abs(change).toFixed(1)}% vs mês anterior
-              </span>
-            </div>
-          )}
-
-        </div>
-
-        <div className="w-10 h-10 rounded-xl bg-[#8B645A]/10 flex items-center justify-center">
-          <Icon size={19} className="text-[#8B645A]" />
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
+  return categoryMap[item.product_name] || "Outros";
+};
 
 /* =========================================================
-   GRÁFICO DE BARRAS
-========================================================= */
-
-function SalesChart({ data }) {
-  const max = Math.max(
-    ...data.map((item) => item.revenue),
-    1
-  );
-
-  return (
-    <div className="h-52 flex items-end gap-3">
-
-      {data.map((item) => {
-        const percentage =
-          (item.revenue / max) * 100;
-
-        const day = new Date(
-          `${item.date}T12:00:00`
-        ).toLocaleDateString("pt-BR", {
-          weekday: "short",
-        });
-
-        return (
-          <div
-            key={item.date}
-            className="flex-1 h-full flex flex-col justify-end items-center gap-2"
-          >
-
-            <div className="w-full flex-1 flex items-end">
-
-              <div
-                className="w-full bg-[#8B645A]/20 rounded-t-lg relative group"
-                style={{ height: `${Math.max(percentage, 5)}%` }}
-              >
-
-                <div
-                  className="absolute inset-x-0 bottom-0 bg-[#8B645A] rounded-t-lg transition-all"
-                  style={{
-                    height: "100%",
-                  }}
-                />
-
-                <div className="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#56443F] text-white text-[10px] font-semibold rounded-lg px-2 py-1 whitespace-nowrap z-10">
-                  {fmtBRL(item.revenue)}
-                </div>
-
-              </div>
-
-            </div>
-
-            <span className="text-[10px] text-[#A28776] capitalize">
-              {day.replace(".", "")}
-            </span>
-
-          </div>
-        );
-      })}
-
-    </div>
-  );
-}
-
-/* =========================================================
-   BADGE DE STATUS
-========================================================= */
-
-function StatusBadge({ status }) {
-  const config =
-    orderStatusConfig[status] || {
-      label: status,
-      className:
-        "bg-gray-50 text-gray-600 border-gray-200",
-    };
-
-  return (
-    <span
-      className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-semibold border ${config.className}`}
-    >
-      {config.label}
-    </span>
-  );
-}
-
-/* =========================================================
-   DASHBOARD
+   COMPONENTE PRINCIPAL
 ========================================================= */
 
 export default function DashboardPage() {
-  const stats = dashboardMock.stats;
 
-  /*
-   * Utilizamos o mesmo productsMock do estoque.
-   * Dessa forma o Dashboard e o InventoryPage
-   * trabalham com os mesmos produtos.
-   */
+  /* =======================================================
+     PERÍODO PADRÃO
+  ======================================================= */
 
-  const lowStockProducts = productsMock.filter(
-    (product) =>
-      product.stock <= product.low_stock_threshold
-  );
+  const [startDate, setStartDate] = useState("2026-01-01");
+  const [endDate, setEndDate] = useState("2026-08-19");
+
+  /* =======================================================
+     CATEGORIAS DISPONÍVEIS
+  ======================================================= */
+
+  const availableCategories = useMemo(() => {
+
+    const categories = new Set();
+
+    ordersMock.forEach((order) => {
+
+      if (order.payment_status !== "paid") {
+        return;
+      }
+
+      order.items?.forEach((item) => {
+        categories.add(getCategory(item));
+      });
+
+    });
+
+    return Array.from(categories);
+
+  }, []);
+
+  /* =======================================================
+     CATEGORIAS SELECIONADAS
+  ======================================================= */
+
+  const [selectedCategories, setSelectedCategories] =
+    useState([]);
+
+  /* =======================================================
+     DROPDOWN DE CATEGORIAS
+  ======================================================= */
+
+  const [categoryOpen, setCategoryOpen] = useState(false);
+
+  /* =======================================================
+     ERRO DE DATA
+  ======================================================= */
+
+  const dateError =
+    startDate &&
+    endDate &&
+    endDate < startDate;
+
+  /* =======================================================
+     ALTERAÇÃO DE CATEGORIA
+  ======================================================= */
+
+  const toggleCategory = (category) => {
+
+    setSelectedCategories((current) => {
+
+      if (current.includes(category)) {
+        return current.filter(
+          (item) => item !== category
+        );
+      }
+
+      return [...current, category];
+
+    });
+
+  };
+
+  /* =======================================================
+     DADOS DO GRÁFICO
+  ======================================================= */
+
+  const chartData = useMemo(() => {
+
+    if (dateError) {
+      return [];
+    }
+
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T23:59:59`);
+
+    /*
+     * Se nenhuma categoria foi selecionada,
+     * não exibimos linhas.
+     */
+
+    if (selectedCategories.length === 0) {
+      return [];
+    }
+
+    /*
+     * Descobre todos os meses existentes no período.
+     */
+
+    const months = [];
+
+    const cursor = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      1
+    );
+
+    const finalMonth = new Date(
+      end.getFullYear(),
+      end.getMonth(),
+      1
+    );
+
+    while (cursor <= finalMonth) {
+
+      const year = cursor.getFullYear();
+      const month = cursor.getMonth();
+
+      months.push({
+        key: `${year}-${String(month + 1).padStart(2, "0")}`,
+        date: new Date(year, month, 1),
+      });
+
+      cursor.setMonth(cursor.getMonth() + 1);
+
+    }
+
+    const result = months.map((month) => {
+
+      const values = {};
+
+      selectedCategories.forEach((category) => {
+        values[category] = 0;
+      });
+
+      return {
+        key: month.key,
+        date: month.date,
+        label: formatMonth(
+          `${month.key}-01`
+        ),
+        values,
+      };
+
+    });
+
+    /*
+     * Apenas vendas aprovadas/pagas entram
+     * no gráfico.
+     */
+
+    ordersMock.forEach((order) => {
+
+      if (order.payment_status !== "paid") {
+        return;
+      }
+
+      const orderDate = new Date(order.created_at);
+
+      if (
+        orderDate < start ||
+        orderDate > end
+      ) {
+        return;
+      }
+
+      const key =
+        `${orderDate.getFullYear()}-${String(
+          orderDate.getMonth() + 1
+        ).padStart(2, "0")}`;
+
+      const month = result.find(
+        (item) => item.key === key
+      );
+
+      if (!month) {
+        return;
+      }
+
+      order.items?.forEach((item) => {
+
+        const category = getCategory(item);
+
+        if (
+          !selectedCategories.includes(category)
+        ) {
+          return;
+        }
+
+        const value =
+          Number(item.unit_price || 0) *
+          Number(item.quantity || 0);
+
+        month.values[category] += value;
+
+      });
+
+    });
+
+    return result;
+
+  }, [
+    startDate,
+    endDate,
+    selectedCategories,
+    dateError,
+  ]);
+
+  /* =======================================================
+     TOTAL DE VENDAS
+  ======================================================= */
+
+  const totalSales = useMemo(() => {
+
+    return chartData.reduce(
+      (total, month) => {
+
+        const monthTotal =
+          selectedCategories.reduce(
+            (sum, category) =>
+              sum +
+              Number(month.values[category] || 0),
+            0
+          );
+
+        return total + monthTotal;
+
+      },
+      0
+    );
+
+  }, [
+    chartData,
+    selectedCategories,
+  ]);
+
+  /* =======================================================
+     MAIOR VALOR DO GRÁFICO
+  ======================================================= */
+
+  const maxValue = useMemo(() => {
+
+    let max = 0;
+
+    chartData.forEach((month) => {
+
+      selectedCategories.forEach(
+        (category) => {
+
+          const value =
+            Number(month.values[category]) || 0;
+
+          if (value > max) {
+            max = value;
+          }
+
+        }
+      );
+
+    });
+
+    return max > 0 ? max : 100;
+
+  }, [
+    chartData,
+    selectedCategories,
+  ]);
+
+  /* =======================================================
+     ESCALA DO EIXO Y
+  ======================================================= */
+
+  const yMax = useMemo(() => {
+
+    if (maxValue <= 1000) {
+      return Math.ceil(maxValue / 200) * 200;
+    }
+
+    if (maxValue <= 5000) {
+      return Math.ceil(maxValue / 1000) * 1000;
+    }
+
+    if (maxValue <= 10000) {
+      return Math.ceil(maxValue / 2000) * 2000;
+    }
+
+    return Math.ceil(maxValue / 5000) * 5000;
+
+  }, [maxValue]);
+
+  /* =======================================================
+     EXPORTAÇÃO
+  ======================================================= */
+
+  const exportData = () => {
+
+    if (
+      dateError ||
+      selectedCategories.length === 0 ||
+      chartData.length === 0
+    ) {
+      return;
+    }
+
+    const rows = [
+      [
+        "Período",
+        "Categoria",
+        "Valor de Venda",
+      ],
+    ];
+
+    chartData.forEach((month) => {
+
+      selectedCategories.forEach(
+        (category) => {
+
+          rows.push([
+            formatMonthFull(
+              `${month.key}-01`
+            ),
+            category,
+            month.values[category]
+              .toFixed(2)
+              .replace(".", ","),
+          ]);
+
+        }
+      );
+
+    });
+
+    const csv = rows
+      .map((row) =>
+        row
+          .map((value) =>
+            `"${String(value).replace(
+              /"/g,
+              '""'
+            )}"`
+          )
+          .join(";")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      ["\uFEFF" + csv],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      `historico-vendas-${startDate}-${endDate}.csv`;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+  };
+
+  /* =======================================================
+     DIMENSÕES DO GRÁFICO
+  ======================================================= */
+
+  const chartWidth = 900;
+  const chartHeight = 320;
+
+  const margin = {
+    top: 20,
+    right: 25,
+    bottom: 55,
+    left: 75,
+  };
+
+  const graphWidth =
+    chartWidth -
+    margin.left -
+    margin.right;
+
+  const graphHeight =
+    chartHeight -
+    margin.top -
+    margin.bottom;
+
+  /* =======================================================
+     POSIÇÃO X
+  ======================================================= */
+
+  const getX = (index) => {
+
+    if (chartData.length <= 1) {
+      return margin.left + graphWidth / 2;
+    }
+
+    return (
+      margin.left +
+      (index /
+        (chartData.length - 1)) *
+        graphWidth
+    );
+
+  };
+
+  /* =======================================================
+     POSIÇÃO Y
+  ======================================================= */
+
+  const getY = (value) => {
+
+    return (
+      margin.top +
+      graphHeight -
+      (value / yMax) *
+        graphHeight
+    );
+
+  };
+
+  /* =======================================================
+     LINHAS
+  ======================================================= */
+
+  const getPath = (category) => {
+
+    if (chartData.length === 0) {
+      return "";
+    }
+
+    return chartData
+      .map((month, index) => {
+
+        const x = getX(index);
+
+        const y = getY(
+          month.values[category] || 0
+        );
+
+        return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+
+      })
+      .join(" ");
+
+  };
+
+  /* =======================================================
+     RÓTULOS DO EIXO Y
+  ======================================================= */
+
+  const yTicks = 5;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <AdminLayout>
 
-      <div className="space-y-6">
+      <div className="space-y-5">
 
         {/* =================================================
             CABEÇALHO
         ================================================= */}
 
-        <div className="flex items-center justify-between">
+        <div>
 
-          <div>
+          <h1 className="text-xl font-bold text-[#56443F]">
+            Histórico de Vendas
+          </h1>
 
-            <h1 className="text-xl font-bold text-[#56443F]">
-              Dashboard
-            </h1>
-
-            <p className="text-xs text-[#A28776] mt-1">
-              Visão geral da loja JARMIN
-            </p>
-
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 bg-white border border-[#E4C7B7]/30 rounded-lg px-3 py-2">
-
-            <Clock
-              size={13}
-              className="text-[#8B645A]"
-            />
-
-            <span className="text-xs text-[#A28776]">
-              Atualizado agora
-            </span>
-
-          </div>
+          <p className="text-xs text-[#A28776] mt-1">
+            Evolução mensal das vendas por categoria
+          </p>
 
         </div>
 
         {/* =================================================
-            INDICADORES
-        ================================================= */}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-
-          <StatCard
-            title="Receita Total"
-            value={fmtBRL(stats.totalRevenue)}
-            change={stats.revenueChange}
-            icon={TrendingUp}
-          />
-
-          <StatCard
-            title="Total de Pedidos"
-            value={stats.totalOrders}
-            change={stats.ordersChange}
-            icon={ShoppingCart}
-          />
-
-          <StatCard
-            title="Clientes"
-            value={stats.totalCustomers}
-            change={stats.customersChange}
-            icon={Users}
-          />
-
-          <StatCard
-            title="Produtos Ativos"
-            value={stats.totalProducts}
-            change={0}
-            icon={Package}
-          />
-
-        </div>
-
-        {/* =================================================
-            GRÁFICO + STATUS
-        ================================================= */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-          {/* GRÁFICO */}
-
-          <div className="lg:col-span-2 bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm">
-
-            <div className="px-5 py-4 border-b border-[#E4C7B7]/20">
-
-              <h2 className="text-sm font-bold text-[#56443F]">
-                Receita dos Últimos 7 Dias
-              </h2>
-
-              <p className="text-xs text-[#A28776] mt-0.5">
-                Acompanhamento diário das vendas
-              </p>
-
-            </div>
-
-            <div className="p-5">
-
-              <SalesChart
-                data={dashboardMock.salesByDay}
-              />
-
-            </div>
-
-          </div>
-
-          {/* STATUS DOS PEDIDOS */}
-
-          <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm">
-
-            <div className="px-5 py-4 border-b border-[#E4C7B7]/20">
-
-              <h2 className="text-sm font-bold text-[#56443F]">
-                Pedidos por Status
-              </h2>
-
-              <p className="text-xs text-[#A28776] mt-0.5">
-                Distribuição dos pedidos
-              </p>
-
-            </div>
-
-            <div className="p-5 space-y-3">
-
-              {dashboardMock.ordersByStatus.map(
-                (item) => (
-                  <div
-                    key={item.status}
-                    className="flex items-center justify-between"
-                  >
-
-                    <StatusBadge
-                      status={item.status}
-                    />
-
-                    <span className="text-sm font-bold text-[#56443F]">
-                      {item.count}
-                    </span>
-
-                  </div>
-                )
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* =================================================
-            PEDIDOS RECENTES + ESTOQUE
-        ================================================= */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* PEDIDOS RECENTES */}
-
-          <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm overflow-hidden">
-
-            <div className="px-5 py-4 border-b border-[#E4C7B7]/20 flex items-center justify-between">
-
-              <div>
-
-                <h2 className="text-sm font-bold text-[#56443F]">
-                  Pedidos Recentes
-                </h2>
-
-                <p className="text-xs text-[#A28776] mt-0.5">
-                  Últimos pedidos realizados
-                </p>
-
-              </div>
-
-              <button
-                className="text-xs font-semibold text-[#8B645A] hover:text-[#56443F] flex items-center gap-1"
-              >
-                Ver todos
-                <Eye size={12} />
-              </button>
-
-            </div>
-
-            <div className="divide-y divide-[#E4C7B7]/10">
-
-              {dashboardMock.recentOrders.map(
-                (order) => (
-                  <div
-                    key={order.id}
-                    className="px-5 py-3.5 flex items-center justify-between"
-                  >
-
-                    <div>
-
-                      <p className="text-sm font-semibold text-[#56443F]">
-                        {order.order_number}
-                      </p>
-
-                      <p className="text-xs text-[#A28776]">
-                        {order.customer_name}
-                      </p>
-
-                    </div>
-
-                    <div className="text-right">
-
-                      <p className="text-sm font-bold text-[#56443F]">
-                        {fmtBRL(order.total)}
-                      </p>
-
-                      <StatusBadge
-                        status={order.status}
-                      />
-
-                    </div>
-
-                  </div>
-                )
-              )}
-
-            </div>
-
-          </div>
-
-          {/* ESTOQUE CRÍTICO */}
-
-          <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm overflow-hidden">
-
-            <div className="px-5 py-4 border-b border-[#E4C7B7]/20 flex items-center justify-between">
-
-              <div>
-
-                <h2 className="text-sm font-bold text-[#56443F]">
-                  Estoque Crítico
-                </h2>
-
-                <p className="text-xs text-[#A28776] mt-0.5">
-                  Produtos com estoque baixo
-                </p>
-
-              </div>
-
-              <button
-                className="text-xs font-semibold text-[#8B645A] hover:text-[#56443F] flex items-center gap-1"
-              >
-                Ver estoque
-                <Eye size={12} />
-              </button>
-
-            </div>
-
-            <div className="divide-y divide-[#E4C7B7]/10">
-
-              {lowStockProducts.length > 0 ? (
-                lowStockProducts.map(
-                  (product) => (
-                    <div
-                      key={product.id}
-                      className="px-5 py-3.5 flex items-center justify-between"
-                    >
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="w-10 h-10 rounded-lg bg-[#E4C7B7]/20 flex items-center justify-center overflow-hidden">
-
-                          {product.image ? (
-                            <img
-                              src={product.image}
-                              alt={product.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Package
-                              size={17}
-                              className="text-[#8B645A]"
-                            />
-                          )}
-
-                        </div>
-
-                        <div>
-
-                          <p className="text-sm font-semibold text-[#56443F]">
-                            {product.name}
-                          </p>
-
-                          <p className="text-xs text-[#A28776]">
-                            {product.sku}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                      <div className="flex items-center gap-1.5 text-red-600">
-
-                        <AlertCircle size={14} />
-
-                        <span className="text-sm font-bold">
-                          {product.stock} un.
-                        </span>
-
-                      </div>
-
-                    </div>
-                  )
-                )
-              ) : (
-                <p className="text-xs text-[#A28776] px-5 py-5">
-                  Todos os produtos possuem estoque adequado.
-                </p>
-              )}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* =================================================
-            PRODUTOS MAIS VENDIDOS
+            FILTROS + GRÁFICO
         ================================================= */}
 
         <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm overflow-hidden">
 
+          {/* FILTROS */}
+
           <div className="px-5 py-4 border-b border-[#E4C7B7]/20">
 
-            <h2 className="text-sm font-bold text-[#56443F]">
-              Produtos Mais Vendidos
-            </h2>
+            <div className="flex flex-col lg:flex-row lg:items-end gap-4">
 
-            <p className="text-xs text-[#A28776] mt-0.5">
-              Desempenho dos produtos no período
+              {/* DATA INICIAL */}
+
+              <div className="w-full sm:w-44">
+
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1.5">
+                  Data inicial
+                </label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B645A]"
+                  />
+
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) =>
+                      setStartDate(
+                        e.target.value
+                      )
+                    }
+                    className="w-full h-9 pl-9 pr-2 rounded-lg border border-[#E4C7B7]/40 bg-white text-xs text-[#56443F] outline-none focus:border-[#8B645A]"
+                  />
+
+                </div>
+
+              </div>
+
+              {/* DATA FINAL */}
+
+              <div className="w-full sm:w-44">
+
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1.5">
+                  Data final
+                </label>
+
+                <div className="relative">
+
+                  <CalendarDays
+                    size={15}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B645A]"
+                  />
+
+                  <input
+                    type="date"
+                    value={endDate}
+                    min={startDate}
+                    onChange={(e) =>
+                      setEndDate(
+                        e.target.value
+                      )
+                    }
+                    className={`w-full h-9 pl-9 pr-2 rounded-lg border bg-white text-xs text-[#56443F] outline-none focus:border-[#8B645A] ${
+                      dateError
+                        ? "border-red-400"
+                        : "border-[#E4C7B7]/40"
+                    }`}
+                  />
+
+                </div>
+
+              </div>
+
+              {/* CATEGORIAS */}
+
+              <div className="w-full sm:w-64 relative">
+
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1.5">
+                  Categorias
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCategoryOpen(
+                      !categoryOpen
+                    )
+                  }
+                  className="w-full h-9 px-3 rounded-lg border border-[#E4C7B7]/40 bg-white text-xs text-[#56443F] flex items-center justify-between hover:border-[#8B645A]"
+                >
+
+                  <span>
+                    {selectedCategories.length ===
+                    0
+                      ? "Selecionar categorias"
+                      : `${selectedCategories.length} categoria(s) selecionada(s)`}
+                  </span>
+
+                  <ChevronDown
+                    size={15}
+                    className={`transition-transform ${
+                      categoryOpen
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+
+                </button>
+
+                {categoryOpen && (
+
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-[#E4C7B7]/40 rounded-lg shadow-lg p-2">
+
+                    {availableCategories.map(
+                      (category, index) => {
+
+                        const selected =
+                          selectedCategories.includes(
+                            category
+                          );
+
+                        return (
+                          <button
+                            key={category}
+                            type="button"
+                            onClick={() =>
+                              toggleCategory(
+                                category
+                              )
+                            }
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-[#FAF9F5] text-left"
+                          >
+
+                            <span
+                              className="w-3 h-3 rounded-full"
+                              style={{
+                                backgroundColor:
+                                  categoryColors[
+                                    index %
+                                      categoryColors.length
+                                  ],
+                              }}
+                            />
+
+                            <span className="flex-1 text-xs font-medium text-[#56443F]">
+                              {category}
+                            </span>
+
+                            {selected && (
+                              <span className="w-4 h-4 rounded bg-[#56443F] flex items-center justify-center">
+                                <svg
+                                  width="10"
+                                  height="10"
+                                  viewBox="0 0 10 10"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M2 5L4 7L8 3"
+                                    stroke="white"
+                                    strokeWidth="1.5"
+                                  />
+                                </svg>
+                              </span>
+                            )}
+
+                          </button>
+                        );
+
+                      }
+                    )}
+
+                  </div>
+
+                )}
+
+              </div>
+
+              {/* EXPORTAR */}
+
+              <button
+                type="button"
+                onClick={exportData}
+                disabled={
+                  dateError ||
+                  selectedCategories.length ===
+                    0
+                }
+                className="h-9 px-4 rounded-lg bg-[#56443F] text-white text-xs font-semibold flex items-center justify-center gap-2 hover:bg-[#705047] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+
+                <Download size={14} />
+
+                Exportar
+
+              </button>
+
+            </div>
+
+            {/* ERRO DE DATA */}
+
+            {dateError && (
+
+              <p className="text-[11px] text-red-500 font-semibold mt-2">
+                A data final não pode ser anterior à
+                data inicial.
+              </p>
+
+            )}
+
+          </div>
+
+          {/* =================================================
+              VENDAS TOTAIS
+          ================================================= */}
+
+          <div className="px-5 py-4 border-b border-[#E4C7B7]/20">
+
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776]">
+              Vendas Totais
+            </p>
+
+            <p className="text-2xl font-bold text-[#56443F] mt-1">
+              {formatBRL(totalSales)}
+            </p>
+
+            <p className="text-[10px] text-[#A28776] mt-0.5">
+              Período e categorias selecionados
             </p>
 
           </div>
 
-          <div className="overflow-x-auto">
+          {/* =================================================
+              GRÁFICO
+          ================================================= */}
 
-            <table className="w-full">
+          <div className="p-5">
 
-              <thead>
+            {selectedCategories.length === 0 ? (
 
-                <tr className="border-b border-[#E4C7B7]/20">
+              <div className="h-[320px] flex flex-col items-center justify-center">
 
-                  <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Produto
-                  </th>
+                <div className="w-10 h-10 rounded-full bg-[#F1F0E2] flex items-center justify-center mb-3">
 
-                  <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Unidades Vendidas
-                  </th>
+                  <ChevronDown
+                    size={18}
+                    className="text-[#8B645A]"
+                  />
 
-                  <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Receita
-                  </th>
+                </div>
 
-                </tr>
+                <p className="text-sm font-semibold text-[#56443F]">
+                  Selecione uma categoria
+                </p>
 
-              </thead>
+                <p className="text-xs text-[#A28776] mt-1">
+                  Selecione uma ou mais categorias
+                  para visualizar a evolução das
+                  vendas.
+                </p>
 
-              <tbody>
+              </div>
 
-                {dashboardMock.topProducts.map(
-                  (product) => (
-                    <tr
-                      key={product.name}
-                      className="border-b border-[#E4C7B7]/10"
-                    >
+            ) : (
 
-                      <td className="px-5 py-3.5">
+              <div className="w-full overflow-x-auto">
 
-                        <p className="text-sm font-semibold text-[#56443F]">
-                          {product.name}
-                        </p>
+                <svg
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  className="w-full min-w-[650px]"
+                  style={{
+                    height: "320px",
+                  }}
+                >
 
-                      </td>
+                  {/* =================================================
+                      GRID
+                  ================================================= */}
 
-                      <td className="px-5 py-3.5 text-sm text-[#56443F]">
-                        {product.sales}
-                      </td>
+                  {Array.from({
+                    length: yTicks + 1,
+                  }).map((_, index) => {
 
-                      <td className="px-5 py-3.5 text-sm font-bold text-[#56443F]">
-                        {fmtBRL(product.revenue)}
-                      </td>
+                    const value =
+                      (yMax / yTicks) *
+                      index;
 
-                    </tr>
-                  )
-                )}
+                    const y =
+                      getY(value);
 
-              </tbody>
+                    return (
+                      <g key={index}>
 
-            </table>
+                        <line
+                          x1={margin.left}
+                          x2={
+                            chartWidth -
+                            margin.right
+                          }
+                          y1={y}
+                          y2={y}
+                          stroke="#E9E4DF"
+                          strokeWidth="1"
+                        />
+
+                        <text
+                          x={
+                            margin.left -
+                            10
+                          }
+                          y={y + 4}
+                          textAnchor="end"
+                          fontSize="10"
+                          fill="#8A817B"
+                        >
+                          {formatShortBRL(
+                            value
+                          )}
+                        </text>
+
+                      </g>
+                    );
+
+                  })}
+
+                  {/* =================================================
+                      EIXO X
+                  ================================================= */}
+
+                  {chartData.map(
+                    (month, index) => {
+
+                      const x =
+                        getX(index);
+
+                      return (
+                        <text
+                          key={month.key}
+                          x={x}
+                          y={
+                            chartHeight -
+                            22
+                          }
+                          textAnchor="middle"
+                          fontSize="10"
+                          fill="#8A817B"
+                        >
+                          {month.label}
+                        </text>
+                      );
+
+                    }
+                  )}
+
+                  {/* =================================================
+                      LINHAS
+                  ================================================= */}
+
+                  {selectedCategories.map(
+                    (
+                      category,
+                      categoryIndex
+                    ) => {
+
+                      const color =
+                        categoryColors[
+                          categoryIndex %
+                            categoryColors.length
+                        ];
+
+                      return (
+                        <g key={category}>
+
+                          {/* LINHA */}
+
+                          <path
+                            d={getPath(
+                              category
+                            )}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+
+                          {/* PONTOS */}
+
+                          {chartData.map(
+                            (
+                              month,
+                              index
+                            ) => {
+
+                              const value =
+                                month.values[
+                                  category
+                                ] || 0;
+
+                              const x =
+                                getX(index);
+
+                              const y =
+                                getY(value);
+
+                              return (
+                                <g
+                                  key={`${category}-${month.key}`}
+                                  className="group"
+                                >
+
+                                  <circle
+                                    cx={x}
+                                    cy={y}
+                                    r="5"
+                                    fill="white"
+                                    stroke={
+                                      color
+                                    }
+                                    strokeWidth="3"
+                                  />
+
+                                  {/* Área maior para
+                                      facilitar o hover */}
+
+                                  <circle
+                                    cx={x}
+                                    cy={y}
+                                    r="12"
+                                    fill="transparent"
+                                    className="cursor-pointer"
+                                  />
+
+                                  {/* TOOLTIP */}
+
+                                  <g className="opacity-0 group-hover:opacity-100 pointer-events-none">
+                                    <rect x={ x - 58 } y={ y - 45 } width="116" height="34" rx="6" fill="#2F2926"/>
+                                    <text x={x} y={ y - 31 }
+                                      textAnchor="middle"
+                                      fontSize="9"
+                                      fill="#FFFFFF"
+                                      fontWeight="600"
+                                    >
+                                      {category}
+                                    </text>
+
+                                    <text
+                                      x={x}
+                                      y={
+                                        y -
+                                        19
+                                      }
+                                      textAnchor="middle"
+                                      fontSize="10"
+                                      fill="#FFFFFF"
+                                      fontWeight="700"
+                                    >
+                                      {formatBRL(
+                                        value
+                                      )}
+                                    </text>
+
+                                  </g>
+
+                                </g>
+                              );
+
+                            }
+                          )}
+
+                        </g>
+                      );
+
+                    }
+                  )}
+
+                </svg>
+
+              </div>
+
+            )}
 
           </div>
+
+          {/* =================================================
+              LEGENDA
+          ================================================= */}
+
+          {selectedCategories.length > 0 && (
+
+            <div className="px-5 py-3 border-t border-[#E4C7B7]/20 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+
+              {selectedCategories.map(
+                (category, index) => {
+
+                  const color =
+                    categoryColors[
+                      index %
+                        categoryColors.length
+                    ];
+
+                  return (
+                    <div
+                      key={category}
+                      className="flex items-center gap-2"
+                    >
+
+                      <span
+                        className="w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor:
+                            color,
+                        }}
+                      />
+
+                      <span className="text-xs font-semibold text-[#56443F]">
+                        {category}
+                      </span>
+
+                    </div>
+                  );
+
+                }
+              )}
+
+            </div>
+
+          )}
 
         </div>
 

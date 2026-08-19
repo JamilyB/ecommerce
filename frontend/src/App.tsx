@@ -13,7 +13,7 @@ import ReturnsPage from "./modules/adm/pages/ReturnsPage"
 import CustomerPage from "./modules/adm/pages/CustomerPage"
 
 function App() {
-  return <CustomerPage />;
+  return <DashboardPage />;
 }
 
 export default App;
