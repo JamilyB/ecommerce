@@ -4,19 +4,16 @@ import Header from "./shared/components/Header";
 import Footer from "./shared/components/Footer";
 import CatalogPage from "./modules/produtos/pages/CatalogPage";
 import CheckoutPage from "./modules/vendas/pages/CheckoutPage";
+import ProductsPage from "./modules/adm/pages/ProductsPage";
+import InventoryPage from "./modules/adm/pages/InventoryPage";
+import DeliveriesPage from "./modules/adm/pages/DeliveriesPage";
+import DashboardPage from "./modules/adm/pages/DashboardPage";
+import OrdersPage from "./modules/adm/pages/OrdersPage";
+import ReturnsPage from "./modules/adm/pages/ReturnsPage"
+import CustomerPage from "./modules/adm/pages/CustomerPage"
 
 function App() {
-  return (
-    <div className="min-h-screen bg-[#F1F0E2] text-[#56443F] flex flex-col">
-      <Header />
-
-      <main className="flex-1">
-        <CheckoutPage />
-      </main>
-
-      <Footer />
-    </div>
-  );
+  return <CustomerPage />;
 }
 
 export default App;
