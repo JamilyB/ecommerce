@@ -1,3 +1,6 @@
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import { ProfilePage } from "./modules/cliente/pages/ProfilePage";
 import RegisterPage from "./modules/cliente/pages/RegisterPage";
 import Header from "./shared/components/Header";
@@ -13,7 +16,14 @@ import ReturnsPage from "./modules/adm/pages/ReturnsPage"
 import CustomerPage from "./modules/adm/pages/CustomerPage"
 
 function App() {
-  return <DashboardPage />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/clientes" element={<CustomerPage />} />
+        <Route path="/produtos" element={<ProductsPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

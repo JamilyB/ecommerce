@@ -1,96 +1,223 @@
 export const customersMock = [
   {
     id: "1",
+    code: "CLI-0001",
+
     full_name: "Jamily Batista",
-    email: "jamily@email.com",
-    phone: "(11) 99999-9999",
+    gender: "Feminino",
+    birth_date: "2003-05-15",
     cpf: "123.456.789-00",
+    phone: {
+      type: "Celular",
+      ddd: "11",
+      number: "99999-9999",
+    },
+    email: "jamily@email.com",
+
+    password: "Senha@123",
+    password_confirmation: "Senha@123",
+
     status: "active",
-    total_orders: 8,
-    total_spent: 1249.90,
-    created_at: "2026-01-15",
-    notes: "Cliente frequente.",
+    ranking: 5,
     avatar_initials: "JB",
 
-    orders: [
+    residential_address: {
+      residence_type: "Casa",
+      street_type: "Rua",
+      street: "das Flores",
+      number: "123",
+      neighborhood: "Centro",
+      cep: "09000-000",
+      city: "Santo André",
+      state: "SP",
+      country: "Brasil",
+      notes: "",
+    },
+
+    addresses: [
       {
-        id: "o1",
-        order_number: "#1001",
-        created_at: "2026-08-10",
-        total: 189.90,
-        status: "delivered",
+        id: "a1",
+        name: "Casa",
+        type: "Entrega",
+        residence_type: "Casa",
+        street_type: "Rua",
+        street: "das Flores",
+        number: "123",
+        neighborhood: "Centro",
+        cep: "09000-000",
+        city: "Santo André",
+        state: "SP",
+        country: "Brasil",
+        notes: "",
       },
       {
-        id: "o2",
+        id: "a2",
+        name: "Trabalho",
+        type: "Cobrança",
+        residence_type: "Comercial",
+        street_type: "Avenida",
+        street: "Industrial",
+        number: "500",
+        neighborhood: "Centro",
+        cep: "09500-000",
+        city: "São Caetano do Sul",
+        state: "SP",
+        country: "Brasil",
+        notes: "Entregar na recepção.",
+      },
+    ],
+
+    cards: [
+      {
+        id: "c1",
+        number: "**** **** **** 1234",
+        name: "JAMILY BATISTA",
+        brand: "Visa",
+        security_code: "***",
+        preferred: true,
+      },
+      {
+        id: "c2",
+        number: "**** **** **** 5678",
+        name: "JAMILY BATISTA",
+        brand: "Mastercard",
+        security_code: "***",
+        preferred: false,
+      },
+    ],
+
+    transactions: [
+      {
+        id: "t1",
+        order_number: "#1001",
+        date: "2026-08-10",
+        total: 189.90,
+        status: "Entregue",
+      },
+      {
+        id: "t2",
         order_number: "#0987",
-        created_at: "2026-07-22",
+        date: "2026-07-22",
         total: 249.90,
-        status: "delivered",
+        status: "Entregue",
       },
     ],
   },
 
   {
     id: "2",
+    code: "CLI-0002",
+
     full_name: "Mariana Souza",
-    email: "mariana@email.com",
-    phone: "(11) 98888-8888",
+    gender: "Feminino",
+    birth_date: "1998-08-20",
     cpf: "234.567.890-11",
+    phone: {
+      type: "Celular",
+      ddd: "11",
+      number: "98888-8888",
+    },
+    email: "mariana@email.com",
+
+    password: "Senha@456",
+    password_confirmation: "Senha@456",
+
     status: "active",
-    total_orders: 5,
-    total_spent: 749.50,
-    created_at: "2026-03-20",
-    notes: "",
+    ranking: 4,
     avatar_initials: "MS",
 
-    orders: [
+    residential_address: {
+      residence_type: "Apartamento",
+      street_type: "Avenida",
+      street: "Brasil",
+      number: "800",
+      neighborhood: "Centro",
+      cep: "09010-000",
+      city: "Santo André",
+      state: "SP",
+      country: "Brasil",
+      notes: "Apartamento 42.",
+    },
+
+    addresses: [
       {
-        id: "o3",
+        id: "a3",
+        name: "Apartamento",
+        type: "Entrega",
+        residence_type: "Apartamento",
+        street_type: "Avenida",
+        street: "Brasil",
+        number: "800",
+        neighborhood: "Centro",
+        cep: "09010-000",
+        city: "Santo André",
+        state: "SP",
+        country: "Brasil",
+        notes: "Apartamento 42.",
+      },
+    ],
+
+    cards: [
+      {
+        id: "c3",
+        number: "**** **** **** 9012",
+        name: "MARIANA SOUZA",
+        brand: "Mastercard",
+        security_code: "***",
+        preferred: true,
+      },
+    ],
+
+    transactions: [
+      {
+        id: "t3",
         order_number: "#1002",
-        created_at: "2026-08-12",
+        date: "2026-08-12",
         total: 159.90,
-        status: "processing",
+        status: "Processando",
       },
     ],
   },
 
   {
     id: "3",
+    code: "CLI-0003",
+
     full_name: "Ana Carolina Lima",
-    email: "ana@email.com",
-    phone: "(11) 97777-7777",
+    gender: "Feminino",
+    birth_date: "1995-03-12",
     cpf: "345.678.901-22",
-    status: "blocked",
-    total_orders: 3,
-    total_spent: 420.00,
-    created_at: "2026-02-10",
-    notes: "Cadastro bloqueado.",
+    phone: {
+      type: "Celular",
+      ddd: "11",
+      number: "97777-7777",
+    },
+    email: "ana@email.com",
+
+    password: "Senha@789",
+    password_confirmation: "Senha@789",
+
+    status: "inactive",
+    ranking: 3,
     avatar_initials: "AC",
 
-    orders: [],
-  },
+    residential_address: {
+      residence_type: "Casa",
+      street_type: "Rua",
+      street: "São Paulo",
+      number: "45",
+      neighborhood: "Jardim",
+      cep: "09100-000",
+      city: "Santo André",
+      state: "SP",
+      country: "Brasil",
+      notes: "",
+    },
 
-  {
-    id: "4",
-    full_name: "Beatriz Oliveira",
-    email: "beatriz@email.com",
-    phone: "(11) 96666-6666",
-    cpf: "456.789.012-33",
-    status: "inactive",
-    total_orders: 1,
-    total_spent: 89.90,
-    created_at: "2026-04-05",
-    notes: "",
-    avatar_initials: "BO",
+    addresses: [],
 
-    orders: [
-      {
-        id: "o4",
-        order_number: "#0912",
-        created_at: "2026-05-02",
-        total: 89.90,
-        status: "delivered",
-      },
-    ],
+    cards: [],
+
+    transactions: [],
   },
 ];

@@ -1,22 +1,5 @@
 import React, { useState } from 'react';
-import {
-  LayoutDashboard,
-  Package,
-  FolderTree,
-  Boxes,
-  ShoppingCart,
-  Truck,
-  RotateCcw,
-  Ticket,
-  Star,
-  Users,
-  Shield,
-  Settings,
-  Menu,
-  X,
-  ChevronRight,
-  Store,
-} from 'lucide-react';
+import { LayoutDashboard, Package, FolderTree, Boxes, ShoppingCart, Truck, RotateCcw, Ticket, Star, Users, Shield, Settings, Menu, X, ChevronRight, Store,} from 'lucide-react';
 
 const navGroups = [
   {
@@ -45,14 +28,12 @@ const navGroups = [
   {
     label: 'Comunidade',
     items: [
-      { page: 'reviews', label: 'Avaliações', icon: Star },
       { page: 'customers', label: 'Clientes', icon: Users },
     ],
   },
   {
     label: 'Sistema',
     items: [
-      { page: 'admins', label: 'Administradores', icon: Shield },
       { page: 'settings', label: 'Configurações', icon: Settings },
     ],
   },
