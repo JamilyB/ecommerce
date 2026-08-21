@@ -21,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/clientes" element={<CustomerPage />} />
         <Route path="/produtos" element={<ProductsPage />} />
+        <Route path="/catalogo" element={<CatalogPage />} />
       </Routes>
     </BrowserRouter>
   );
