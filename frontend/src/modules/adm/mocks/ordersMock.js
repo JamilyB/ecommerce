@@ -11,7 +11,7 @@ export const ordersMock = [
     discount: 0,
     payment_method: "Pix",
     payment_status: "paid",
-    status: "confirmed",
+    status: "delivered",
 
     shipping_address: {
       street: "Rua das Flores, 120",
@@ -106,77 +106,4 @@ export const ordersMock = [
     ],
   },
 
-  {
-    id: 4,
-    order_number: "PED-2026-004",
-    customer_name: "Beatriz Santos",
-    customer_email: "beatriz@email.com",
-    created_at: "2026-08-16T18:10:00",
-    total: 299.70,
-    subtotal: 279.70,
-    shipping_cost: 20.00,
-    discount: 0,
-    payment_method: "Cartão de Crédito",
-    payment_status: "paid",
-    status: "delivered",
-
-    shipping_address: {
-      street: "Rua do Comércio, 300",
-      city: "Mogi das Cruzes",
-      state: "SP",
-      cep: "08700-000",
-    },
-
-    items: [
-      {
-        id: 5,
-        product_name: "Vela Floral",
-        product_image: "",
-        volume: "220g",
-        quantity: 1,
-        unit_price: 99.90,
-      },
-      {
-        id: 6,
-        product_name: "Vela Luxo",
-        product_image: "",
-        volume: "300g",
-        quantity: 1,
-        unit_price: 179.80,
-      },
-    ],
-  },
-
-  {
-    id: 5,
-    order_number: "PED-2026-005",
-    customer_name: "Ana Clara Lima",
-    customer_email: "anaclara@email.com",
-    created_at: "2026-08-15T10:25:00",
-    total: 89.90,
-    subtotal: 89.90,
-    shipping_cost: 0,
-    discount: 0,
-    payment_method: "Pix",
-    payment_status: "pending",
-    status: "pending",
-
-    shipping_address: {
-      street: "Rua Central, 90",
-      city: "Diadema",
-      state: "SP",
-      cep: "09900-000",
-    },
-
-    items: [
-      {
-        id: 7,
-        product_name: "Vela Relaxar",
-        product_image: "",
-        volume: "180g",
-        quantity: 1,
-        unit_price: 89.90,
-      },
-    ],
-  },
 ];

@@ -11,9 +11,10 @@ import ProductsPage from "./modules/adm/pages/ProductsPage";
 import InventoryPage from "./modules/adm/pages/InventoryPage";
 import DeliveriesPage from "./modules/adm/pages/DeliveriesPage";
 import DashboardPage from "./modules/adm/pages/DashboardPage";
-import OrdersPage from "./modules/adm/pages/OrdersPage";
+import OrdersPageADM from "./modules/adm/pages/OrdersPage";
 import ReturnsPage from "./modules/adm/pages/ReturnsPage"
 import CustomerPage from "./modules/adm/pages/CustomerPage"
+import OrdersPage from "./modules/vendas/pages/OrdersPage"
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/produtos" element={<ProductsPage />} />
         <Route path="/catalogo" element={<CatalogPage />} />
         <Route path="/comprar" element={<CheckoutPage />} />
+        <Route path="/pedidos" element={<OrdersPage />} />
       </Routes>
     </BrowserRouter>
   );
