@@ -347,20 +347,6 @@ export default function ReturnsPage() {
 
             </div>
 
-            <div className="bg-[#FAF9F5] rounded-xl p-4 flex gap-3">
-              <Package
-                size={18}
-                className="text-[#8B645A] flex-shrink-0"
-              />
-
-              <p className="text-[10px] text-[#A28776] leading-relaxed">
-                Após o envio da solicitação, ela ficará com o status
-                <strong className="text-[#56443F]">
-                  {" "}Em troca
-                </strong>
-                e será analisada pela equipe responsável.
-              </p>
-            </div>
 
             <div className="flex gap-3">
 
