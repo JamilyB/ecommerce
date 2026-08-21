@@ -6,19 +6,26 @@ import CheckoutForm from "../components/CheckoutForm";
 import OrderSummary from "../components/OrderSummary";
 
 export default function CheckoutPage() {
-  const [cart] = useState(cartMock);
   const [step, setStep] = useState(1);
   const [orderFinished, setOrderFinished] = useState(false);
 
   if (orderFinished) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-20 text-center">
+  const subtotal = cartMock.reduce(
+    (total, item) =>
+      total + item.product.price * item.quantity,
+    0
+  );
+
+  const shipping = subtotal >= 180 ? 0 : 15;
+  const total = subtotal + shipping;
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-16">
+
+      <div className="text-center">
 
         <div className="w-16 h-16 bg-[#E4C7B7]/30 rounded-full flex items-center justify-center mx-auto mb-5">
-          <Check
-            size={30}
-            className="text-[#8B645A]"
-          />
+          <Check size={30} className="text-[#8B645A]" />
         </div>
 
         <h1 className="font-serif text-3xl font-bold text-[#56443F]">
@@ -26,10 +33,78 @@ export default function CheckoutPage() {
         </h1>
 
         <p className="text-sm text-[#A28776] mt-3">
-          Obrigada pela sua compra. Seu pedido foi recebido
-          com sucesso.
+          Obrigada pela sua compra. Seu pedido foi recebido com sucesso.
         </p>
 
+      </div>
+
+      {/* Resumo */}
+      <div className="bg-white rounded-xl p-6 mt-8">
+
+        <h2 className="font-serif text-lg font-bold text-[#56443F] border-b border-[#E4C7B7]/20 pb-3">
+          Resumo do pedido
+        </h2>
+
+        <div className="space-y-4 mt-5">
+
+          {cartMock.map((item) => (
+            <div
+              key={item.product.id}
+              className="flex justify-between gap-4"
+            >
+              <div>
+                <p className="text-xs font-bold text-[#56443F]">
+                  {item.product.name}
+                </p>
+
+                <p className="text-[10px] text-[#A28776]">
+                  Quantidade: {item.quantity}
+                </p>
+              </div>
+
+              <span className="text-xs font-bold text-[#56443F]">
+                R$ {(item.product.price * item.quantity)
+                  .toFixed(2)
+                  .replace(".", ",")}
+              </span>
+            </div>
+          ))}
+
+        </div>
+
+        <div className="border-t border-[#E4C7B7]/20 mt-5 pt-4 space-y-2 text-xs">
+
+          <div className="flex justify-between text-[#A28776]">
+            <span>Subtotal</span>
+            <span>
+              R$ {subtotal.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+
+          <div className="flex justify-between text-[#A28776]">
+            <span>Frete</span>
+            <span>
+              {shipping === 0
+                ? "Grátis"
+                : `R$ ${shipping.toFixed(2).replace(".", ",")}`}
+            </span>
+          </div>
+
+          <div className="border-t border-[#E4C7B7]/20 pt-3 flex justify-between">
+            <span className="font-serif font-bold text-[#56443F]">
+              Total
+            </span>
+
+            <span className="font-serif text-xl font-bold text-[#8B645A]">
+              R$ {total.toFixed(2).replace(".", ",")}
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div className="text-center">
         <button
           onClick={() => {
             setOrderFinished(false);
@@ -39,10 +114,11 @@ export default function CheckoutPage() {
         >
           Voltar para a loja
         </button>
-
       </div>
-    );
-  }
+
+    </div>
+  );
+}
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-12 py-10">
@@ -51,11 +127,7 @@ export default function CheckoutPage() {
       <div className="flex items-center justify-between border-b border-[#E4C7B7]/20 pb-6 mb-8">
 
         <button
-          onClick={() => {
-            if (step === 2) {
-              setStep(1);
-            }
-          }}
+          onClick={() => step === 2 && setStep(1)}
           className="flex items-center gap-2 text-xs font-bold text-[#8B645A]"
         >
           <ChevronLeft size={16} />
@@ -100,7 +172,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="lg:col-span-5 lg:sticky lg:top-24 h-fit">
-          <OrderSummary cart={cart} />
+          <OrderSummary cart={cartMock} />
         </div>
 
       </div>
