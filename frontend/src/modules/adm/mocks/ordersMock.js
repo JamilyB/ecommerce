@@ -52,7 +52,7 @@ export const ordersMock = [
     discount: 0,
     payment_method: "Cartão de Crédito",
     payment_status: "paid",
-    status: "processing",
+    status: "delivered",
 
     shipping_address: {
       street: "Av. Paulista, 850",

@@ -12,9 +12,10 @@ import InventoryPage from "./modules/adm/pages/InventoryPage";
 import DeliveriesPage from "./modules/adm/pages/DeliveriesPage";
 import DashboardPage from "./modules/adm/pages/DashboardPage";
 import OrdersPageADM from "./modules/adm/pages/OrdersPage";
-import ReturnsPage from "./modules/adm/pages/ReturnsPage"
+import ReturnsPageADM from "./modules/adm/pages/ReturnsPage"
 import CustomerPage from "./modules/adm/pages/CustomerPage"
 import OrdersPage from "./modules/vendas/pages/OrdersPage"
+import ReturnsPage from "./modules/vendas/pages/ReturnsPage"
 
 function App() {
   return (
@@ -25,6 +26,9 @@ function App() {
         <Route path="/catalogo" element={<CatalogPage />} />
         <Route path="/comprar" element={<CheckoutPage />} />
         <Route path="/pedidos" element={<OrdersPage />} />
+        <Route path="/devolucoes" element={<ReturnsPage />} />
+        <Route path="/inventario" element={<InventoryPage />} />
+        <Route path="/entregas" element={<DeliveriesPage />} /> 
       </Routes>
     </BrowserRouter>
   );
