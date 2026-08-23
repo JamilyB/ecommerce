@@ -102,7 +102,7 @@ const RegisterPage = () => {
         </h1>
 
         <p className="text-xs text-[#A28776] font-semibold">
-          Cadastre seus dados para começar a comprar na SURU.
+          Cadastre seus dados para começar a comprar na JARMIN VELAS.
         </p>
 
       </div>
@@ -202,10 +202,6 @@ const RegisterPage = () => {
                   Cartão
                 </h2>
 
-                <p className="text-[10px] text-[#A28776] font-semibold">
-                  Opcional
-                </p>
-
               </div>
 
             </div>
@@ -255,7 +251,7 @@ const RegisterPage = () => {
           </button>
 
           <p className="text-[10px] text-[#A28776] font-semibold text-center mt-3">
-            Ao criar sua conta, você concorda com os termos de uso da SURU.
+            Ao criar sua conta, você concorda com os termos de uso da JARMIN VELAS.
           </p>
 
         </div>

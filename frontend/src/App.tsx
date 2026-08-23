@@ -30,6 +30,7 @@ function App() {
         <Route path="/inventario" element={<InventoryPage />} />
         <Route path="/entregas" element={<DeliveriesPage />} /> 
         <Route path="/perfil" element={<ProfilePage />} />
+        <Route path="/cadastrar" element={<RegisterPage />} />
       </Routes>
     </BrowserRouter>
   );
