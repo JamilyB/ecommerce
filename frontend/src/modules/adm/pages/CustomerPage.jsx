@@ -1006,106 +1006,106 @@ export default function CustomerPage() {
                         />
                       </div>
 
-                      <div>
+                      {/* TELEFONE */}
+                      <div className="sm:col-span-2">
                         <label className={labelClass}>
-                          Tipo de Telefone
+                          Telefone
                         </label>
 
-                        <input
-                          value={
-                            form.phone?.type || ""
-                          }
-                          onChange={(e) =>
-                            updatePhone(
-                              "type",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+
+                          {/* Tipo */}
+                          <div>
+                            <label className={labelClass}>
+                              Tipo
+                            </label>
+
+                            <input
+                              value={form.phone?.type || ""}
+                              onChange={(e) =>
+                                updatePhone("type", e.target.value)
+                              }
+                              className={inputClass}
+                            />
+                          </div>
+
+                          {/* DDD */}
+                          <div>
+                            <label className={labelClass}>
+                              DDD
+                            </label>
+
+                            <input
+                              value={form.phone?.ddd || ""}
+                              onChange={(e) =>
+                                updatePhone("ddd", e.target.value)
+                              }
+                              className={inputClass}
+                            />
+                          </div>
+
+                          {/* Número */}
+                          <div className="sm:col-span-2">
+                            <label className={labelClass}>
+                              Número
+                            </label>
+
+                            <input
+                              value={form.phone?.number || ""}
+                              onChange={(e) =>
+                                updatePhone("number", e.target.value)
+                              }
+                              className={inputClass}
+                            />
+                          </div>
+
+                        </div>
                       </div>
 
-                      <div>
-                        <label className={labelClass}>
-                          DDD
-                        </label>
-
-                        <input
-                          value={
-                            form.phone?.ddd || ""
-                          }
-                          onChange={(e) =>
-                            updatePhone(
-                              "ddd",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-
-                      <div>
-                        <label className={labelClass}>
-                          Número
-                        </label>
-
-                        <input
-                          value={
-                            form.phone?.number || ""
-                          }
-                          onChange={(e) =>
-                            updatePhone(
-                              "number",
-                              e.target.value
-                            )
-                          }
-                          className={inputClass}
-                        />
-                      </div>
-
+                      {/* SENHA */}
                       {showForm && (
-                        <>
-                          <div>
-                            <label className={labelClass}>
-                              Senha
-                            </label>
+                        <div className="sm:col-span-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                            <input
-                              type="password"
-                              value={
-                                form.password || ""
-                              }
-                              onChange={(e) =>
-                                updateField(
-                                  "password",
-                                  e.target.value
-                                )
-                              }
-                              className={inputClass}
-                            />
+                            {/* Senha */}
+                            <div>
+                              <label className={labelClass}>
+                                Senha
+                              </label>
+
+                              <input
+                                type="password"
+                                value={form.password || ""}
+                                onChange={(e) =>
+                                  updateField("password", e.target.value)
+                                }
+                                className={inputClass}
+                              />
+                            </div>
+
+                            {/* Confirmar senha */}
+                            <div>
+                              <label className={labelClass}>
+                                Confirmar Senha
+                              </label>
+
+                              <input
+                                type="password"
+                                value={
+                                  form.password_confirmation || ""
+                                }
+                                onChange={(e) =>
+                                  updateField(
+                                    "password_confirmation",
+                                    e.target.value
+                                  )
+                                }
+                                className={inputClass}
+                              />
+                            </div>
+
                           </div>
-
-                          <div>
-                            <label className={labelClass}>
-                              Confirmar Senha
-                            </label>
-
-                            <input
-                              type="password"
-                              value={
-                                form.password_confirmation ||
-                                ""
-                              }
-                              onChange={(e) =>
-                                updateField(
-                                  "password_confirmation",
-                                  e.target.value
-                                )
-                              }
-                              className={inputClass}
-                            />
-                          </div>
-                        </>
+                        </div>
                       )}
 
                     </div>
@@ -1123,10 +1123,6 @@ export default function CustomerPage() {
                             <h3 className="text-base font-bold text-[#56443F]">
                               Endereços
                             </h3>
-
-                            <p className="text-xs text-[#A28776] mt-1">
-                              Cadastre até 2 endereços.
-                            </p>
                           </div>
 
                           {form.addresses.length < 2 && (
@@ -1202,21 +1198,58 @@ export default function CustomerPage() {
                                     <label className={labelClass}>
                                       Tipo
                                     </label>
-                                    <input
-                                      placeholder="Entrega / Cobrança"
-                                      value={
-                                        address.type ||
-                                        ""
-                                      }
-                                      onChange={(e) =>
-                                        updateAddress(
-                                          address.id,
-                                          "type",
-                                          e.target.value
-                                        )
-                                      }
-                                      className={inputClass}
-                                    />
+
+                                    <div className="flex items-center gap-4 h-[42px]">
+
+                                      <label className="flex items-center gap-2 text-sm text-[#56443F]">
+                                        <input
+                                          type="checkbox"
+                                          checked={address.type?.includes("Entrega") || false}
+                                          onChange={(e) => {
+                                            const types = address.type
+                                              ? address.type.split(" / ")
+                                              : [];
+
+                                            const updatedTypes = e.target.checked
+                                              ? [...new Set([...types, "Entrega"])]
+                                              : types.filter((type) => type !== "Entrega");
+
+                                            updateAddress(
+                                              address.id,
+                                              "type",
+                                              updatedTypes.join(" / ")
+                                            );
+                                          }}
+                                          className="accent-[#8B645A]"
+                                        />
+                                        Entrega
+                                      </label>
+
+                                      <label className="flex items-center gap-2 text-sm text-[#56443F]">
+                                        <input
+                                          type="checkbox"
+                                          checked={address.type?.includes("Cobrança") || false}
+                                          onChange={(e) => {
+                                            const types = address.type
+                                              ? address.type.split(" / ")
+                                              : [];
+
+                                            const updatedTypes = e.target.checked
+                                              ? [...new Set([...types, "Cobrança"])]
+                                              : types.filter((type) => type !== "Cobrança");
+
+                                            updateAddress(
+                                              address.id,
+                                              "type",
+                                              updatedTypes.join(" / ")
+                                            );
+                                          }}
+                                          className="accent-[#8B645A]"
+                                        />
+                                        Cobrança
+                                      </label>
+
+                                    </div>
                                   </div>
 
                                   <div>
@@ -1449,6 +1482,7 @@ export default function CustomerPage() {
                               <h3 className="text-base font-bold text-[#56443F]">
                                 Cartão
                               </h3>
+
 
                             </div>
 
