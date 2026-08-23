@@ -7,6 +7,7 @@ import {
   Check,
   Star,
   X,
+  Edit2,
 } from 'lucide-react';
 
 import FormField from './FormField';
@@ -17,24 +18,101 @@ const CardsTab = ({
   setShowForm,
 }) => {
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     cardNumber: '',
     holderName: '',
-    expiry: '',
-  });
+    brand: '',
+    securityCode: '',
+    isDefault: false,
+  };
 
-  const handleCancel = () => {
+  const [cards, setCards] = useState(savedCards);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+
+  const startAdd = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(true);
+  };
+
+  const startEdit = (card) => {
     setForm({
-      cardNumber: '',
-      holderName: '',
-      expiry: '',
+      ...emptyForm,
+      ...card,
     });
 
+    setEditingId(card.id);
+    setShowForm(true);
+  };
+
+  const handleCancel = () => {
+    setForm(emptyForm);
+    setEditingId(null);
     setShowForm(false);
+  };
+
+  const handleSave = () => {
+    const newCard = {
+      ...form,
+      id: editingId || Date.now(),
+      last4: form.cardNumber.slice(-4),
+    };
+
+    if (editingId) {
+      setCards((prev) => {
+        if (form.isDefault) {
+          return prev.map((card) => ({
+            ...card,
+            isDefault:
+              card.id === editingId,
+          }));
+        }
+
+        return prev.map((card) =>
+          card.id === editingId
+            ? newCard
+            : card
+        );
+      });
+    } else {
+      setCards((prev) => {
+        if (form.isDefault) {
+          return [
+            ...prev.map((card) => ({
+              ...card,
+              isDefault: false,
+            })),
+            newCard,
+          ];
+        }
+
+        return [...prev, newCard];
+      });
+    }
+
+    handleCancel();
+  };
+
+  const handleDelete = (id) => {
+    setCards((prev) =>
+      prev.filter((card) => card.id !== id)
+    );
+  };
+
+  const setDefaultCard = (id) => {
+    setCards((prev) =>
+      prev.map((card) => ({
+        ...card,
+        isDefault: card.id === id,
+      }))
+    );
   };
 
   return (
     <div className="space-y-5">
+
+      {/* HEADER */}
 
       <div className="flex items-center justify-between">
 
@@ -44,8 +122,8 @@ const CardsTab = ({
 
         {!showForm && (
           <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#8B645A] hover:text-[#56443F] transition-colors"
+            onClick={startAdd}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#8B645A] hover:text-[#56443F]"
           >
             <Plus size={14} />
             Adicionar
@@ -54,10 +132,14 @@ const CardsTab = ({
 
       </div>
 
+      {/* CARTÕES */}
+
       {!showForm && (
+
         <div className="space-y-4">
 
-          {savedCards.map((card) => (
+          {cards.map((card) => (
+
             <div
               key={card.id}
               className="bg-white rounded-2xl p-5 border border-[#E4C7B7]/30 space-y-3"
@@ -68,33 +150,60 @@ const CardsTab = ({
                 <div className="flex items-center gap-3">
 
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#56443F] to-[#8B645A] flex items-center justify-center">
-                    <CreditCard size={18} className="text-[#F1F0E2]" />
+                    <CreditCard
+                      size={18}
+                      className="text-[#F1F0E2]"
+                    />
                   </div>
 
                   <div>
+
                     <p className="font-bold text-sm text-[#56443F]">
                       {card.brand}
                     </p>
 
                     <p className="text-xs text-[#A28776] font-semibold tracking-wider">
-                      •••• {card.last4}
+                      ••••{' '}
+                      {card.last4 ||
+                        card.cardNumber?.slice(-4)}
                     </p>
+
                   </div>
 
                 </div>
+
+                {/* AÇÕES */}
 
                 <div className="flex gap-1.5">
 
                   {!card.isDefault && (
                     <button
-                      className="p-1.5 hover:bg-[#E4C7B7]/20 rounded-lg text-[#A28776] hover:text-[#8B645A] transition-colors"
+                      onClick={() =>
+                        setDefaultCard(card.id)
+                      }
+                      title="Definir como preferencial"
+                      className="p-1.5 hover:bg-[#E4C7B7]/20 rounded-lg text-[#A28776] hover:text-[#8B645A]"
                     >
                       <Star size={13} />
                     </button>
                   )}
 
                   <button
-                    className="p-1.5 hover:bg-red-50 rounded-lg text-[#A28776] hover:text-red-500 transition-colors"
+                    onClick={() =>
+                      startEdit(card)
+                    }
+                    title="Editar cartão"
+                    className="p-1.5 hover:bg-[#E4C7B7]/20 rounded-lg text-[#A28776] hover:text-[#8B645A]"
+                  >
+                    <Edit2 size={13} />
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleDelete(card.id)
+                    }
+                    title="Excluir cartão"
+                    className="p-1.5 hover:bg-red-50 rounded-lg text-[#A28776] hover:text-red-500"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -103,46 +212,59 @@ const CardsTab = ({
 
               </div>
 
+              {/* NOME */}
+
               <div className="flex items-center justify-between text-xs">
+
                 <span className="text-[#A28776] font-semibold">
                   {card.holderName}
                 </span>
 
-                <span className="text-[#A28776] font-semibold">
-                  Val: {card.expiry}
-                </span>
               </div>
+
+              {/* PREFERENCIAL */}
 
               {card.isDefault && (
                 <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
                   <Check size={9} />
-                  Cartão Padrão
+                  Cartão Preferencial
                 </span>
               )}
 
             </div>
+
           ))}
 
         </div>
+
       )}
 
+      {/* FORMULÁRIO */}
+
       {showForm && (
+
         <div className="bg-white rounded-2xl p-6 border border-[#E4C7B7]/30 space-y-4">
+
+          {/* HEADER DO FORMULÁRIO */}
 
           <div className="flex items-center justify-between">
 
             <h4 className="font-bold text-sm text-[#56443F]">
-              Novo Cartão
+              {editingId
+                ? 'Editar Cartão'
+                : 'Novo Cartão'}
             </h4>
 
             <button
               onClick={handleCancel}
-              className="text-[#A28776] hover:text-[#56443F] transition-colors"
+              className="text-[#A28776] hover:text-[#56443F]"
             >
               <X size={18} />
             </button>
 
           </div>
+
+          {/* CAMPOS */}
 
           <div className="space-y-3">
 
@@ -152,59 +274,111 @@ const CardsTab = ({
               onChange={(v) =>
                 setForm((prev) => ({
                   ...prev,
-                  cardNumber: formatCardNumber(v),
+                  cardNumber: v,
                 }))
               }
               placeholder="0000 0000 0000 0000"
             />
 
             <FormField
-              label="Nome no Cartão"
+              label="Nome impresso no Cartão"
               value={form.holderName}
               onChange={(v) =>
                 setForm((prev) => ({
                   ...prev,
-                  holderName: v,
+                  holderName: v.toUpperCase(),
                 }))
               }
               placeholder="NOME COMPLETO"
             />
 
             <FormField
-              label="Validade"
-              value={form.expiry}
+              label="Bandeira do Cartão"
+              value={form.brand}
               onChange={(v) =>
                 setForm((prev) => ({
                   ...prev,
-                  expiry: formatCardExpiry(v),
+                  brand: v,
                 }))
               }
-              placeholder="12/28"
+              placeholder="Visa / Mastercard / Elo"
             />
 
+            <FormField
+              label="Código de Segurança"
+              value={form.securityCode}
+              onChange={(v) =>
+                setForm((prev) => ({
+                  ...prev,
+                  securityCode: v
+                    .replace(/\D/g, '')
+                    .slice(0, 4),
+                }))
+              }
+              placeholder="123"
+            />
+
+            {/* PREFERENCIAL */}
+
+            <div className="pt-2">
+
+              <label className="flex items-center gap-2 text-sm font-semibold text-[#56443F]">
+
+                <input
+                  type="checkbox"
+                  checked={form.isDefault}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      isDefault:
+                        e.target.checked,
+                    }))
+                  }
+                  className="accent-[#56443F]"
+                />
+
+                Cartão preferencial
+
+              </label>
+
+            </div>
+
           </div>
+
+          {/* BOTÕES */}
 
           <div className="flex gap-3 pt-2">
 
             <button
-              onClick={handleCancel}
-              className="flex-1 px-4 py-2.5 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+              onClick={handleSave}
+              className="flex-1 px-4 py-2.5 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-xs font-bold uppercase tracking-wider"
             >
-              <Check size={14} className="inline mr-1" />
-              Adicionar
+              <Check
+                size={14}
+                className="inline mr-1"
+              />
+
+              {editingId
+                ? 'Atualizar'
+                : 'Adicionar'}
             </button>
 
             <button
               onClick={handleCancel}
-              className="px-4 py-2.5 bg-white hover:bg-[#E4C7B7]/15 text-[#56443F] border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase tracking-wider transition-colors"
+              className="px-4 py-2.5 bg-white text-[#56443F] border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase tracking-wider"
             >
-              <X size={14} className="inline mr-1" />
+              <X
+                size={14}
+                className="inline mr-1"
+              />
+
               Cancelar
             </button>
 
           </div>
 
         </div>
+
       )}
 
     </div>
