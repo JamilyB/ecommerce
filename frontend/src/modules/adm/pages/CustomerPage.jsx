@@ -1221,7 +1221,7 @@ export default function CustomerPage() {
 
                                   <div>
                                     <label className={labelClass}>
-                                      Tipo de residência
+                                      Tipo Residencia
                                     </label>
                                     <input
                                       value={
@@ -1450,9 +1450,6 @@ export default function CustomerPage() {
                                 Cartão
                               </h3>
 
-                              <p className="text-xs text-[#A28776]">
-                                Opcional
-                              </p>
                             </div>
 
                           </div>
@@ -1490,7 +1487,7 @@ export default function CustomerPage() {
 
                                 <div>
                                   <label className={labelClass}>
-                                    Número do cartão
+                                    Número
                                   </label>
 
                                   <input
@@ -1510,7 +1507,7 @@ export default function CustomerPage() {
 
                                 <div>
                                   <label className={labelClass}>
-                                    Nome no cartão
+                                    Nome
                                   </label>
 
                                   <input
