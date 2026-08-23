@@ -2,148 +2,276 @@ import { useState } from "react";
 import {
   Plus,
   Pencil,
-  Trash2,
   Power,
-  Star,
   Search,
   X,
+  Boxes,
 } from "lucide-react";
 
 import { productsMock } from "../mocks/productsMock";
 import AdminLayout from "../components/AdminLayout";
 
-const collections = [
-  "relaxar",
-  "cafe",
-  "natureza",
-  "floral",
-  "gourmet",
-  "luxo",
+const pricingGroups = [
+  { id: "padrao", name: "Padrão", margin: 30 },
+  { id: "premium", name: "Premium", margin: 40 },
+  { id: "luxo", name: "Luxo", margin: 50 },
 ];
+
+const inactivityCategories = [
+  "Produto descontinuado",
+  "Baixa procura",
+  "Fora de catálogo",
+  "Outro",
+];
+
+const createCode = (products) =>
+  `JAS-${String(products.length + 1).padStart(4, "0")}`;
+
+const fmtBRL = (value) =>
+  Number(value || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 
 const initialForm = {
   name: "",
   subtitle: "",
-  price: "",
-  image: "",
   collection: "",
   aroma: "",
   familia_olfativa: "",
   size: "",
   weight: "",
-  dimensions: "",
-  burn_time: "",
   color: "",
   recipiente: "",
   cera: "",
+  image: "",
   description: "",
-  details: "",
-  notes_top: "",
-  notes_heart: "",
-  notes_base: "",
-  sku: "",
+
+  cost: "",
+  pricing_group: "padrao",
+  price: "",
+
   stock: 0,
   low_stock_threshold: 5,
+
   is_active: true,
-  is_featured: false,
 };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState(productsMock);
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [filters, setFilters] = useState({
+    collection: "",
+    aroma: "",
+    familia_olfativa: "",
+    size: "",
+    weight: "",
+    color: "",
+    recipiente: "",
+    cera: "",
+    status: "",
+  });
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [form, setForm] = useState(initialForm);
 
+  const [stockProduct, setStockProduct] = useState(null);
+  const [stockEntry, setStockEntry] = useState("");
+
+  const [inactiveProduct, setInactiveProduct] = useState(null);
+  const [inactiveCategory, setInactiveCategory] = useState("");
+  const [inactiveReason, setInactiveReason] = useState("");
+
+  const [priceAuthorization, setPriceAuthorization] =
+    useState(false);
+
   const filteredProducts = products.filter((product) => {
+    const text = search.toLowerCase();
+
     const searchMatch =
-      product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.sku.toLowerCase().includes(search.toLowerCase());
+      product.name?.toLowerCase().includes(text) ||
+      product.sku?.toLowerCase().includes(text);
 
-    const statusMatch =
-      statusFilter === "all" ||
-      (statusFilter === "active" && product.is_active) ||
-      (statusFilter === "inactive" && !product.is_active) ||
-      (statusFilter === "featured" && product.is_featured);
+    const filtersMatch =
+      (!filters.collection ||
+        product.collection === filters.collection) &&
+      (!filters.aroma || product.aroma === filters.aroma) &&
+      (!filters.familia_olfativa ||
+        product.familia_olfativa === filters.familia_olfativa) &&
+      (!filters.size || product.size === filters.size) &&
+      (!filters.weight || product.weight === filters.weight) &&
+      (!filters.color || product.color === filters.color) &&
+      (!filters.recipiente ||
+        product.recipiente === filters.recipiente) &&
+      (!filters.cera || product.cera === filters.cera) &&
+      (!filters.status ||
+        (filters.status === "active" && product.is_active) ||
+        (filters.status === "inactive" && !product.is_active));
 
-    return searchMatch && statusMatch;
+    return searchMatch && filtersMatch;
   });
 
   function openCreate() {
     setEditingProduct(null);
-    setForm(initialForm);
+    setForm({
+      ...initialForm,
+      sku: createCode(products),
+    });
     setModalOpen(true);
   }
 
   function openEdit(product) {
     setEditingProduct(product);
-    setForm({ ...product });
+    setForm({
+      ...initialForm,
+      ...product,
+    });
+    setPriceAuthorization(false);
     setModalOpen(true);
   }
 
-  function handleChange(field, value) {
-    setForm((prev) => ({
-      ...prev,
+  function change(field, value) {
+    setForm((current) => ({
+      ...current,
       [field]: value,
     }));
   }
 
+  const selectedGroup = pricingGroups.find(
+    (group) => group.id === form.pricing_group
+  );
+
+  const calculatedPrice =
+    Number(form.cost || 0) *
+    (1 + (selectedGroup?.margin || 0) / 100);
+
+  const minimumPrice = calculatedPrice;
+
   function saveProduct() {
-    if (!form.name || !form.price) {
-      alert("Preencha nome e preço.");
-      return;
-    }
+    const productData = {
+      ...form,
+      price: calculatedPrice,
+      cost: Number(form.cost),
+      stock: Number(form.stock),
+      low_stock_threshold: Number(
+        form.low_stock_threshold
+      ),
+    };
 
     if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((product) =>
+      setProducts((current) =>
+        current.map((product) =>
           product.id === editingProduct.id
             ? {
                 ...product,
-                ...form,
-                price: Number(form.price),
-                stock: Number(form.stock),
+                ...productData,
               }
             : product
         )
       );
     } else {
-      const newProduct = {
-        ...form,
-        id: Date.now(),
-        price: Number(form.price),
-        stock: Number(form.stock),
-        rating: 0,
-        reviews_count: 0,
-      };
-
-      setProducts((prev) => [...prev, newProduct]);
+      setProducts((current) => [
+        ...current,
+        {
+          ...productData,
+          id: Date.now(),
+          sku: createCode(current),
+          rating: 0,
+          reviews_count: 0,
+        },
+      ]);
     }
 
     setModalOpen(false);
   }
 
-  function toggleProduct(product) {
-    setProducts((prev) =>
-      prev.map((item) =>
-        item.id === product.id
-          ? { ...item, is_active: !item.is_active }
-          : item
-      )
-    );
+  function updatePrice(value) {
+    const newPrice = Number(value);
+
+    if (newPrice < minimumPrice) {
+      setPriceAuthorization(true);
+    } else {
+      setPriceAuthorization(false);
+    }
+
+    change("price", value);
   }
 
-  function deleteProduct(id) {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir este produto?"
+  function savePrice() {
+    if (
+      Number(form.price) < minimumPrice &&
+      !priceAuthorization
+    ) {
+      return;
+    }
+
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === editingProduct.id
+          ? {
+              ...product,
+              price: Number(form.price),
+            }
+          : product
+      )
     );
 
-    if (!confirmed) return;
+    setModalOpen(false);
+  }
 
-    setProducts((prev) =>
-      prev.filter((product) => product.id !== id)
+  function saveStock() {
+    const quantity = Number(stockEntry);
+
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === stockProduct.id
+          ? {
+              ...product,
+              stock: product.stock + quantity,
+            }
+          : product
+      )
+    );
+
+    setStockProduct(null);
+    setStockEntry("");
+  }
+
+  function openInactivation(product) {
+    setInactiveProduct(product);
+    setInactiveCategory("");
+    setInactiveReason("");
+  }
+
+  function confirmInactivation() {
+    setProducts((current) =>
+      current.map((product) =>
+        product.id === inactiveProduct.id
+          ? {
+              ...product,
+              is_active: false,
+              inactivity_category: inactiveCategory,
+              inactivity_reason: inactiveReason,
+            }
+          : product
+      )
+    );
+
+    setInactiveProduct(null);
+  }
+
+  function activateProduct(product) {
+    setProducts((current) =>
+      current.map((item) =>
+        item.id === product.id
+          ? {
+              ...item,
+              is_active: true,
+            }
+          : item
+      )
     );
   }
 
@@ -160,7 +288,7 @@ export default function ProductsPage() {
             </h1>
 
             <p className="text-xs text-[#A28776] mt-1">
-              {products.length} produtos no catálogo
+              {products.length} produtos cadastrados
             </p>
           </div>
 
@@ -175,9 +303,9 @@ export default function ProductsPage() {
 
         {/* FILTROS */}
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="bg-white rounded-xl border border-[#E4C7B7]/30 p-4 space-y-3">
 
-          <div className="relative flex-1">
+          <div className="relative">
             <Search
               size={16}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A28776]"
@@ -186,20 +314,52 @@ export default function ProductsPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nome ou SKU..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm outline-none focus:border-[#8B645A]"
+              placeholder="Buscar por nome ou código..."
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 text-sm outline-none focus:border-[#8B645A]"
             />
           </div>
 
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+
+            {[
+              ["collection", "Coleção"],
+              ["aroma", "Aroma"],
+              ["familia_olfativa", "Família olfativa"],
+              ["size", "Tamanho"],
+              ["weight", "Peso"],
+              ["color", "Cor"],
+              ["recipiente", "Recipiente"],
+              ["cera", "Cera"],
+            ].map(([field, label]) => (
+              <input
+                key={field}
+                value={filters[field]}
+                onChange={(e) =>
+                  setFilters((current) => ({
+                    ...current,
+                    [field]: e.target.value,
+                  }))
+                }
+                placeholder={label}
+                className="px-3 py-2 rounded-lg border border-[#E4C7B7]/40 text-xs outline-none focus:border-[#8B645A]"
+              />
+            ))}
+
+          </div>
+
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm"
+            value={filters.status}
+            onChange={(e) =>
+              setFilters((current) => ({
+                ...current,
+                status: e.target.value,
+              }))
+            }
+            className="px-3 py-2 rounded-lg border border-[#E4C7B7]/40 text-xs"
           >
-            <option value="all">Todos</option>
+            <option value="">Todos os status</option>
             <option value="active">Ativos</option>
             <option value="inactive">Inativos</option>
-            <option value="featured">Destaque</option>
           </select>
 
         </div>
@@ -220,15 +380,19 @@ export default function ProductsPage() {
                   </th>
 
                   <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Preço
+                    Código
+                  </th>
+
+                  <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
+                    Custo
+                  </th>
+
+                  <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
+                    Venda
                   </th>
 
                   <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
                     Estoque
-                  </th>
-
-                  <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Avaliação
                   </th>
 
                   <th className="text-left text-[10px] uppercase tracking-wider text-[#A28776] px-5 py-3">
@@ -245,77 +409,45 @@ export default function ProductsPage() {
               <tbody>
 
                 {filteredProducts.map((product) => (
-
                   <tr
                     key={product.id}
                     className="border-b border-[#E4C7B7]/10 hover:bg-[#FAF9F5]"
                   >
 
                     <td className="px-5 py-4">
-
                       <div className="flex items-center gap-3">
 
                         <div className="w-10 h-10 rounded-lg bg-[#E4C7B7]/20 overflow-hidden">
-
-                          {product.image ? (
+                          {product.image && (
                             <img
                               src={product.image}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />
-                          ) : null}
-
+                          )}
                         </div>
 
-                        <div>
-                          <p className="font-semibold text-[#56443F]">
-                            {product.name}
-                          </p>
-
-                          <p className="text-xs text-[#A28776]">
-                            {product.sku}
-                          </p>
-                        </div>
+                        <p className="font-semibold text-sm text-[#56443F]">
+                          {product.name}
+                        </p>
 
                       </div>
-
                     </td>
 
-                    <td className="px-5 py-4 font-semibold">
-                      R$ {product.price.toFixed(2).replace(".", ",")}
+                    <td className="px-5 py-4 text-xs text-[#A28776]">
+                      {product.sku}
                     </td>
 
-                    <td className="px-5 py-4">
-
-                      <span
-                        className={
-                          product.stock <= product.low_stock_threshold
-                            ? "font-semibold text-red-600"
-                            : "font-semibold"
-                        }
-                      >
-                        {product.stock}
-                      </span>
-
+                    <td className="px-5 py-4 text-sm">
+                      {fmtBRL(product.cost)}
                     </td>
 
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 text-sm font-semibold">
+                      {fmtBRL(product.price)}
+                    </td>
 
-                      <div className="flex items-center gap-1 text-xs">
-
-                        <Star
-                          size={12}
-                          className="text-amber-500 fill-amber-500"
-                        />
-
-                        {product.rating.toFixed(1)}
-
-                        <span className="text-[#A28776]">
-                          ({product.reviews_count})
-                        </span>
-
-                      </div>
-
+                    <td className="px-5 py-4 text-sm font-semibold">
+                      {product.stock}
                     </td>
 
                     <td className="px-5 py-4">
@@ -327,7 +459,9 @@ export default function ProductsPage() {
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
-                        {product.is_active ? "Ativo" : "Inativo"}
+                        {product.is_active
+                          ? "Ativo"
+                          : "Inativo"}
                       </span>
 
                     </td>
@@ -339,30 +473,49 @@ export default function ProductsPage() {
                         <button
                           onClick={() => openEdit(product)}
                           className="p-1.5 rounded-lg hover:bg-[#E4C7B7]/20"
+                          title="Editar"
                         >
                           <Pencil size={14} />
                         </button>
 
                         <button
-                          onClick={() => toggleProduct(product)}
+                          onClick={() => {
+                            setStockProduct(product);
+                            setStockEntry("");
+                          }}
                           className="p-1.5 rounded-lg hover:bg-[#E4C7B7]/20"
+                          title="Entrada de estoque"
                         >
-                          <Power size={14} />
+                          <Boxes size={14} />
                         </button>
 
-                        <button
-                          onClick={() => deleteProduct(product.id)}
-                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {product.is_active ? (
+                          <button
+                            onClick={() =>
+                              openInactivation(product)
+                            }
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
+                            title="Inativar"
+                          >
+                            <Power size={14} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              activateProduct(product)
+                            }
+                            className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600"
+                            title="Ativar"
+                          >
+                            <Power size={14} />
+                          </button>
+                        )}
 
                       </div>
 
                     </td>
 
                   </tr>
-
                 ))}
 
               </tbody>
@@ -379,14 +532,13 @@ export default function ProductsPage() {
 
         </div>
 
-        {/* MODAL */}
+        {/* MODAL PRODUTO */}
 
         {modalOpen && (
-
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 
             <div
-              className="absolute inset-0 bg-[#56443F]/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#56443F]/40"
               onClick={() => setModalOpen(false)}
             />
 
@@ -402,7 +554,7 @@ export default function ProductsPage() {
                   </h2>
 
                   <p className="text-xs text-[#A28776] mt-1">
-                    Preencha as informações do produto
+                    Código: {form.sku}
                   </p>
                 </div>
 
@@ -423,7 +575,7 @@ export default function ProductsPage() {
                     label="Nome"
                     value={form.name}
                     onChange={(value) =>
-                      handleChange("name", value)
+                      change("name", value)
                     }
                   />
 
@@ -431,69 +583,27 @@ export default function ProductsPage() {
                     label="Subtítulo"
                     value={form.subtitle}
                     onChange={(value) =>
-                      handleChange("subtitle", value)
+                      change("subtitle", value)
                     }
                   />
 
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
                   <Field
-                    label="Preço"
-                    type="number"
-                    value={form.price}
+                    label="Coleção"
+                    value={form.collection}
                     onChange={(value) =>
-                      handleChange("price", value)
+                      change("collection", value)
                     }
                   />
-
-                  <Field
-                    label="Estoque"
-                    type="number"
-                    value={form.stock}
-                    onChange={(value) =>
-                      handleChange("stock", value)
-                    }
-                  />
-
-                  <Field
-                    label="Alerta estoque"
-                    type="number"
-                    value={form.low_stock_threshold}
-                    onChange={(value) =>
-                      handleChange(
-                        "low_stock_threshold",
-                        value
-                      )
-                    }
-                  />
-
-                  <Field
-                    label="SKU"
-                    value={form.sku}
-                    onChange={(value) =>
-                      handleChange("sku", value)
-                    }
-                  />
-
-                </div>
-
-                <Field
-                  label="URL da imagem"
-                  value={form.image}
-                  onChange={(value) =>
-                    handleChange("image", value)
-                  }
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                   <Field
                     label="Aroma"
                     value={form.aroma}
                     onChange={(value) =>
-                      handleChange("aroma", value)
+                      change("aroma", value)
                     }
                   />
 
@@ -501,7 +611,7 @@ export default function ProductsPage() {
                     label="Família olfativa"
                     value={form.familia_olfativa}
                     onChange={(value) =>
-                      handleChange(
+                      change(
                         "familia_olfativa",
                         value
                       )
@@ -512,53 +622,23 @@ export default function ProductsPage() {
                     label="Tamanho"
                     value={form.size}
                     onChange={(value) =>
-                      handleChange("size", value)
+                      change("size", value)
                     }
                   />
-
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                   <Field
                     label="Peso"
                     value={form.weight}
                     onChange={(value) =>
-                      handleChange("weight", value)
+                      change("weight", value)
                     }
                   />
-
-                  <Field
-                    label="Dimensões"
-                    value={form.dimensions}
-                    onChange={(value) =>
-                      handleChange(
-                        "dimensions",
-                        value
-                      )
-                    }
-                  />
-
-                  <Field
-                    label="Tempo de queima"
-                    value={form.burn_time}
-                    onChange={(value) =>
-                      handleChange(
-                        "burn_time",
-                        value
-                      )
-                    }
-                  />
-
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                   <Field
                     label="Cor"
                     value={form.color}
                     onChange={(value) =>
-                      handleChange("color", value)
+                      change("color", value)
                     }
                   />
 
@@ -566,10 +646,7 @@ export default function ProductsPage() {
                     label="Recipiente"
                     value={form.recipiente}
                     onChange={(value) =>
-                      handleChange(
-                        "recipiente",
-                        value
-                      )
+                      change("recipiente", value)
                     }
                   />
 
@@ -577,128 +654,162 @@ export default function ProductsPage() {
                     label="Cera"
                     value={form.cera}
                     onChange={(value) =>
-                      handleChange("cera", value)
+                      change("cera", value)
                     }
                   />
 
                 </div>
+
+                {/* PRECIFICAÇÃO */}
+
+                <div className="border-t pt-5">
+
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#A28776] mb-3">
+                    Precificação
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                    <Field
+                      label="Custo de compra"
+                      type="number"
+                      value={form.cost}
+                      onChange={(value) =>
+                        change("cost", value)
+                      }
+                    />
+
+                    <label>
+                      <span className="block text-xs font-semibold text-[#56443F] mb-1.5">
+                        Grupo de precificação
+                      </span>
+
+                      <select
+                        value={form.pricing_group}
+                        onChange={(e) =>
+                          change(
+                            "pricing_group",
+                            e.target.value
+                          )
+                        }
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 text-sm"
+                      >
+                        {pricingGroups.map((group) => (
+                          <option
+                            key={group.id}
+                            value={group.id}
+                          >
+                            {group.name} — {group.margin}%
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="px-3.5 py-2.5 rounded-lg bg-[#FAF9F5] border border-[#E4C7B7]/30">
+
+                      <span className="block text-xs text-[#A28776]">
+                        Preço calculado
+                      </span>
+
+                      <strong className="text-[#56443F]">
+                        {fmtBRL(calculatedPrice)}
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* ESTOQUE */}
+
+                <div className="border-t pt-5">
+
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#A28776] mb-3">
+                    Estoque
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4">
+
+                    <Field
+                      label="Quantidade"
+                      type="number"
+                      value={form.stock}
+                      onChange={(value) =>
+                        change("stock", value)
+                      }
+                    />
+
+                    <Field
+                      label="Estoque mínimo"
+                      type="number"
+                      value={form.low_stock_threshold}
+                      onChange={(value) =>
+                        change(
+                          "low_stock_threshold",
+                          value
+                        )
+                      }
+                    />
+
+                  </div>
+
+                </div>
+
+                {/* PREÇO MANUAL */}
+
+                {editingProduct && (
+                  <div className="border-t pt-5">
+
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#A28776] mb-3">
+                      Alteração de preço
+                    </p>
+
+                    <Field
+                      label="Novo preço"
+                      type="number"
+                      value={form.price}
+                      onChange={updatePrice}
+                    />
+
+                    {priceAuthorization && (
+                      <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
+
+                        Preço abaixo da margem mínima de{" "}
+                        {fmtBRL(minimumPrice)}.
+                        <br />
+
+                        Autorização do gerente de vendas
+                        necessária.
+
+                        <label className="flex items-center gap-2 mt-2 font-semibold">
+                          <input
+                            type="checkbox"
+                            checked={
+                              priceAuthorization
+                            }
+                            onChange={(e) =>
+                              setPriceAuthorization(
+                                e.target.checked
+                              )
+                            }
+                          />
+                          Autorização concedida
+                        </label>
+
+                      </div>
+                    )}
+
+                  </div>
+                )}
 
                 <Field
-                  label="Coleção"
-                  value={form.collection}
+                  label="URL da imagem"
+                  value={form.image}
                   onChange={(value) =>
-                    handleChange("collection", value)
+                    change("image", value)
                   }
                 />
-
-                <div>
-
-                  <label className="block text-xs font-semibold mb-1.5">
-                    Descrição
-                  </label>
-
-                  <textarea
-                    value={form.description}
-                    onChange={(e) =>
-                      handleChange(
-                        "description",
-                        e.target.value
-                      )
-                    }
-                    rows={3}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 outline-none"
-                  />
-
-                </div>
-
-                <div>
-
-                  <label className="block text-xs font-semibold mb-1.5">
-                    Detalhes
-                  </label>
-
-                  <textarea
-                    value={form.details}
-                    onChange={(e) =>
-                      handleChange(
-                        "details",
-                        e.target.value
-                      )
-                    }
-                    rows={2}
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 outline-none"
-                  />
-
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                  <Field
-                    label="Notas de saída"
-                    value={form.notes_top}
-                    onChange={(value) =>
-                      handleChange(
-                        "notes_top",
-                        value
-                      )
-                    }
-                  />
-
-                  <Field
-                    label="Notas de coração"
-                    value={form.notes_heart}
-                    onChange={(value) =>
-                      handleChange(
-                        "notes_heart",
-                        value
-                      )
-                    }
-                  />
-
-                  <Field
-                    label="Notas de base"
-                    value={form.notes_base}
-                    onChange={(value) =>
-                      handleChange(
-                        "notes_base",
-                        value
-                      )
-                    }
-                  />
-
-                </div>
-
-                <div className="flex gap-6 pt-3 border-t">
-
-                  <label className="flex items-center gap-2 text-xs font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={form.is_active}
-                      onChange={(e) =>
-                        handleChange(
-                          "is_active",
-                          e.target.checked
-                        )
-                      }
-                    />
-                    Produto ativo
-                  </label>
-
-                  <label className="flex items-center gap-2 text-xs font-semibold">
-                    <input
-                      type="checkbox"
-                      checked={form.is_featured}
-                      onChange={(e) =>
-                        handleChange(
-                          "is_featured",
-                          e.target.checked
-                        )
-                      }
-                    />
-                    Produto em destaque
-                  </label>
-
-                </div>
 
               </div>
 
@@ -712,10 +823,15 @@ export default function ProductsPage() {
                 </button>
 
                 <button
-                  onClick={saveProduct}
+                  onClick={
+                    editingProduct &&
+                    priceAuthorization
+                      ? savePrice
+                      : saveProduct
+                  }
                   className="px-4 py-2.5 rounded-lg bg-[#56443F] text-white text-sm font-semibold hover:bg-[#8B645A]"
                 >
-                  Salvar Produto
+                  Salvar
                 </button>
 
               </div>
@@ -723,16 +839,98 @@ export default function ProductsPage() {
             </div>
 
           </div>
+        )}
 
+        {/* ENTRADA DE ESTOQUE */}
+
+        {stockProduct && (
+          <SimpleModal
+            title="Entrada de estoque"
+            onClose={() => setStockProduct(null)}
+          >
+
+            <p className="text-sm font-semibold text-[#56443F]">
+              {stockProduct.name}
+            </p>
+
+            <p className="text-xs text-[#A28776] mb-4">
+              Estoque atual: {stockProduct.stock}
+            </p>
+
+            <Field
+              label="Quantidade recebida"
+              type="number"
+              value={stockEntry}
+              onChange={setStockEntry}
+            />
+
+            <ModalButtons
+              onCancel={() => setStockProduct(null)}
+              onSave={saveStock}
+              label="Registrar entrada"
+            />
+
+          </SimpleModal>
+        )}
+
+        {/* INATIVAÇÃO */}
+
+        {inactiveProduct && (
+          <SimpleModal
+            title="Inativar produto"
+            onClose={() => setInactiveProduct(null)}
+          >
+
+            <label>
+              <span className="block text-xs font-semibold mb-1.5">
+                Categoria de inativação
+              </span>
+
+              <select
+                value={inactiveCategory}
+                onChange={(e) =>
+                  setInactiveCategory(e.target.value)
+                }
+                className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 text-sm"
+              >
+                <option value="">
+                  Selecione
+                </option>
+
+                {inactivityCategories.map(
+                  (category) => (
+                    <option
+                      key={category}
+                      value={category}
+                    >
+                      {category}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+
+            <div className="mt-4">
+              <Field
+                label="Justificativa"
+                value={inactiveReason}
+                onChange={setInactiveReason}
+              />
+            </div>
+
+            <ModalButtons
+              onCancel={() => setInactiveProduct(null)}
+              onSave={confirmInactivation}
+              label="Confirmar inativação"
+            />
+
+          </SimpleModal>
         )}
 
       </div>
     </AdminLayout>
   );
 }
-
-
-/* CAMPO SIMPLES DA PRÓPRIA PÁGINA */
 
 function Field({
   label,
@@ -742,7 +940,6 @@ function Field({
 }) {
   return (
     <label className="block">
-
       <span className="block text-xs font-semibold text-[#56443F] mb-1.5">
         {label}
       </span>
@@ -750,10 +947,76 @@ function Field({
       <input
         type={type}
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(e.target.value)
+        }
         className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm outline-none focus:border-[#8B645A]"
       />
-
     </label>
+  );
+}
+
+function SimpleModal({
+  title,
+  children,
+  onClose,
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+      <div
+        className="absolute inset-0 bg-[#56443F]/40"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+
+          <h2 className="font-bold text-[#56443F]">
+            {title}
+          </h2>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-[#E4C7B7]/20"
+          >
+            <X size={18} />
+          </button>
+
+        </div>
+
+        <div className="p-6">
+          {children}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function ModalButtons({
+  onCancel,
+  onSave,
+  label,
+}) {
+  return (
+    <div className="flex justify-end gap-3 mt-5">
+
+      <button
+        onClick={onCancel}
+        className="px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#E4C7B7]/30"
+      >
+        Cancelar
+      </button>
+
+      <button
+        onClick={onSave}
+        className="px-4 py-2.5 rounded-lg bg-[#56443F] text-white text-sm font-semibold hover:bg-[#8B645A]"
+      >
+        {label}
+      </button>
+
+    </div>
   );
 }
