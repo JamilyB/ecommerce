@@ -9,7 +9,7 @@ import AdminLayout from "../components/AdminLayout";
 import { ordersMock } from "../mocks/ordersMock";
 
 const fmtBRL = (value) => {
-  return value.toLocaleString("pt-BR", {
+  return Number(value).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
@@ -26,72 +26,75 @@ const fmtDate = (date) => {
 };
 
 const statusConfig = {
-  pending: {
-    label: "Pendente",
-    className: "bg-amber-50 text-amber-700 border-amber-200",
-  },
-
-  confirmed: {
-    label: "Confirmado",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
-  },
-
   processing: {
-    label: "Processando",
-    className: "bg-purple-50 text-purple-700 border-purple-200",
+    label: "Em processamento",
+    className:
+      "bg-purple-50 text-purple-700 border-purple-200",
   },
 
   shipped: {
-    label: "Enviado",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
+    label: "Em trânsito",
+    className:
+      "bg-blue-50 text-blue-700 border-blue-200",
   },
 
   delivered: {
     label: "Entregue",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-
-  cancelled: {
-    label: "Cancelado",
-    className: "bg-red-50 text-red-700 border-red-200",
+    className:
+      "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
 };
 
 const paymentConfig = {
   pending: {
     label: "Pendente",
-    className: "bg-amber-50 text-amber-700 border-amber-200",
+    className:
+      "bg-amber-50 text-amber-700 border-amber-200",
   },
 
   paid: {
-    label: "Pago",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    label: "Autorizado",
+    className:
+      "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
 
   refunded: {
     label: "Reembolsado",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
+    className:
+      "bg-blue-50 text-blue-700 border-blue-200",
   },
 
   failed: {
     label: "Falhou",
-    className: "bg-red-50 text-red-700 border-red-200",
+    className:
+      "bg-red-50 text-red-700 border-red-200",
   },
 };
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState(ordersMock);
+
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const [statusFilter, setStatusFilter] =
+    useState("all");
+
+  const [selectedOrder, setSelectedOrder] =
+    useState(null);
 
   const filteredOrders = orders.filter((order) => {
     const searchText = search.toLowerCase();
 
     const searchMatch =
-      order.order_number.toLowerCase().includes(searchText) ||
-      order.customer_name.toLowerCase().includes(searchText) ||
-      order.customer_email.toLowerCase().includes(searchText);
+      order.order_number
+        .toLowerCase()
+        .includes(searchText) ||
+      order.customer_name
+        .toLowerCase()
+        .includes(searchText) ||
+      order.customer_email
+        .toLowerCase()
+        .includes(searchText);
 
     const statusMatch =
       statusFilter === "all" ||
@@ -100,14 +103,17 @@ export default function OrdersPage() {
     return searchMatch && statusMatch;
   });
 
-  const updateStatus = (status) => {
+  /*
+   * O ADM seleciona o status diretamente.
+   */
+  const updateStatus = (newStatus) => {
     if (!selectedOrder) return;
 
     const updatedOrders = orders.map((order) =>
       order.id === selectedOrder.id
         ? {
             ...order,
-            status,
+            status: newStatus,
           }
         : order
     );
@@ -116,17 +122,24 @@ export default function OrdersPage() {
 
     setSelectedOrder({
       ...selectedOrder,
-      status,
+      status: newStatus,
     });
   };
 
+  const status =
+    statusConfig[selectedOrder?.status] ||
+    statusConfig.processing;
+
+  const payment =
+    paymentConfig[
+      selectedOrder?.payment_status
+    ] || paymentConfig.pending;
+
   return (
     <AdminLayout>
-
       <div className="space-y-6">
 
         {/* CABEÇALHO */}
-
         <div>
           <h1 className="text-xl font-bold text-[#56443F]">
             Pedidos
@@ -137,9 +150,7 @@ export default function OrdersPage() {
           </p>
         </div>
 
-
         {/* FILTROS */}
-
         <div className="flex flex-col sm:flex-row gap-3">
 
           <div className="relative flex-1">
@@ -160,7 +171,6 @@ export default function OrdersPage() {
 
           </div>
 
-
           <select
             value={statusFilter}
             onChange={(event) =>
@@ -173,37 +183,23 @@ export default function OrdersPage() {
               Todos os status
             </option>
 
-            <option value="pending">
-              Pendente
-            </option>
-
-            <option value="confirmed">
-              Confirmado
-            </option>
-
             <option value="processing">
-              Processando
+              Em processamento
             </option>
 
             <option value="shipped">
-              Enviado
+              Em trânsito
             </option>
 
             <option value="delivered">
               Entregue
             </option>
 
-            <option value="cancelled">
-              Cancelado
-            </option>
-
           </select>
 
         </div>
 
-
         {/* TABELA */}
-
         <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm overflow-hidden">
 
           <div className="overflow-x-auto">
@@ -246,25 +242,23 @@ export default function OrdersPage() {
 
               </thead>
 
-
               <tbody>
 
                 {filteredOrders.map((order) => {
 
-                  const status =
-                    statusConfig[order.status];
+                  const orderStatus =
+                    statusConfig[order.status] ||
+                    statusConfig.processing;
 
-                  const payment =
-                    paymentConfig[order.payment_status];
+                  const orderPayment =
+                    paymentConfig[
+                      order.payment_status
+                    ] || paymentConfig.pending;
 
                   return (
-
                     <tr
                       key={order.id}
-                      onClick={() =>
-                        setSelectedOrder(order)
-                      }
-                      className="border-b border-[#E4C7B7]/10 hover:bg-[#FAF9F5] cursor-pointer"
+                      className="border-b border-[#E4C7B7]/10 hover:bg-[#FAF9F5]"
                     >
 
                       <td className="px-5 py-4">
@@ -274,7 +268,6 @@ export default function OrdersPage() {
                         </span>
 
                       </td>
-
 
                       <td className="px-5 py-4">
 
@@ -288,7 +281,6 @@ export default function OrdersPage() {
 
                       </td>
 
-
                       <td className="px-5 py-4">
 
                         <span className="text-xs text-[#A28776]">
@@ -296,7 +288,6 @@ export default function OrdersPage() {
                         </span>
 
                       </td>
-
 
                       <td className="px-5 py-4">
 
@@ -306,49 +297,42 @@ export default function OrdersPage() {
 
                       </td>
 
-
                       <td className="px-5 py-4">
 
                         <span
-                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border ${payment.className}`}
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border ${orderPayment.className}`}
                         >
-                          {payment.label}
+                          {orderPayment.label}
                         </span>
 
                       </td>
 
-
                       <td className="px-5 py-4">
 
                         <span
-                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border ${status.className}`}
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold border ${orderStatus.className}`}
                         >
-                          {status.label}
+                          {orderStatus.label}
                         </span>
 
                       </td>
-
 
                       <td className="px-5 py-4">
 
                         <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedOrder(order);
-                          }}
+                          onClick={() =>
+                            setSelectedOrder(order)
+                          }
                           className="p-1.5 rounded-lg hover:bg-[#E4C7B7]/20 text-[#56443F]"
+                          title="Visualizar pedido"
                         >
-
                           <Eye size={15} />
-
                         </button>
 
                       </td>
 
                     </tr>
-
                   );
-
                 })}
 
               </tbody>
@@ -357,20 +341,15 @@ export default function OrdersPage() {
 
           </div>
 
-
           {filteredOrders.length === 0 && (
-
             <div className="py-12 text-center text-sm text-[#A28776]">
               Nenhum pedido encontrado.
             </div>
-
           )}
 
         </div>
 
-
         {/* MODAL */}
-
         {selectedOrder && (
 
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -382,25 +361,25 @@ export default function OrdersPage() {
               }
             />
 
+            <div className="relative bg-white rounded-2xl border border-[#E4C7B7]/50 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-
-              {/* HEADER MODAL */}
-
-              <div className="flex items-center justify-between px-6 py-4 border-b">
+              {/* HEADER */}
+              <div className="flex items-center justify-between px-6 py-4">
 
                 <div>
 
                   <h2 className="font-bold text-[#56443F]">
-                    Pedido {selectedOrder.order_number}
+                    Pedido{" "}
+                    {selectedOrder.order_number}
                   </h2>
 
                   <p className="text-xs text-[#A28776] mt-1">
-                    {fmtDate(selectedOrder.created_at)}
+                    {fmtDate(
+                      selectedOrder.created_at
+                    )}
                   </p>
 
                 </div>
-
 
                 <button
                   onClick={() =>
@@ -408,21 +387,15 @@ export default function OrdersPage() {
                   }
                   className="p-2 rounded-lg hover:bg-[#E4C7B7]/20"
                 >
-
                   <X size={18} />
-
                 </button>
 
               </div>
 
-
               {/* CONTEÚDO */}
-
               <div className="p-6 space-y-5">
 
-
-                {/* CLIENTE + PAGAMENTO */}
-
+                {/* CLIENTE / PAGAMENTO */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                   <div className="bg-[#FAF9F5] rounded-lg p-4">
@@ -441,7 +414,6 @@ export default function OrdersPage() {
 
                   </div>
 
-
                   <div className="bg-[#FAF9F5] rounded-lg p-4">
 
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
@@ -453,26 +425,16 @@ export default function OrdersPage() {
                     </p>
 
                     <span
-                      className={`inline-flex mt-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
-                        paymentConfig[
-                          selectedOrder.payment_status
-                        ].className
-                      }`}
+                      className={`inline-flex mt-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${payment.className}`}
                     >
-                      {
-                        paymentConfig[
-                          selectedOrder.payment_status
-                        ].label
-                      }
+                      {payment.label}
                     </span>
 
                   </div>
 
                 </div>
 
-
                 {/* ENDEREÇO */}
-
                 <div className="bg-[#FAF9F5] rounded-lg p-4">
 
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
@@ -493,142 +455,55 @@ export default function OrdersPage() {
 
                 </div>
 
-
                 {/* ITENS */}
-
                 <div>
 
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
                     Itens do Pedido
                   </p>
 
-
                   <div className="space-y-2">
 
-                    {selectedOrder.items.map((item) => (
+                    {selectedOrder.items.map(
+                      (item) => (
 
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-3 bg-white border border-[#E4C7B7]/30 rounded-lg p-3"
-                      >
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 bg-white border border-[#E4C7B7]/30 rounded-lg p-3"
+                        >
 
-                        {item.product_image ? (
+                          {item.product_image ? (
+                            <img
+                              src={item.product_image}
+                              alt={item.product_name}
+                              className="w-10 h-10 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-[#E4C7B7]/20" />
+                          )}
 
-                          <img
-                            src={item.product_image}
-                            alt={item.product_name}
-                            className="w-10 h-10 object-cover rounded-lg"
-                          />
+                          <div className="flex-1">
 
-                        ) : (
+                            <p className="text-sm font-semibold text-[#56443F]">
+                              {item.product_name}
+                            </p>
 
-                          <div className="w-10 h-10 rounded-lg bg-[#E4C7B7]/20" />
+                            <p className="text-xs text-[#A28776]">
+                              {item.volume}
+                              {" • "}
+                              Qtd: {item.quantity}
+                            </p>
 
-                        )}
+                          </div>
 
-
-                        <div className="flex-1">
-
-                          <p className="text-sm font-semibold text-[#56443F]">
-                            {item.product_name}
-                          </p>
-
-                          <p className="text-xs text-[#A28776]">
-                            {item.volume}
-                            {" • "}
-                            Qtd: {item.quantity}
-                          </p>
+                          <span className="text-sm font-bold">
+                            {fmtBRL(
+                              item.unit_price *
+                                item.quantity
+                            )}
+                          </span>
 
                         </div>
-
-
-                        <span className="text-sm font-bold">
-                          {fmtBRL(
-                            item.unit_price *
-                            item.quantity
-                          )}
-                        </span>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                </div>
-
-
-                {/* RESUMO */}
-
-                <div className="bg-[#FAF9F5] rounded-lg p-4 space-y-1.5">
-
-                  <div className="flex justify-between text-xs text-[#A28776]">
-                    <span>Subtotal</span>
-                    <span>
-                      {fmtBRL(selectedOrder.subtotal)}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between text-xs text-[#A28776]">
-                    <span>Frete</span>
-                    <span>
-                      {fmtBRL(selectedOrder.shipping_cost)}
-                    </span>
-                  </div>
-
-                  {selectedOrder.discount > 0 && (
-
-                    <div className="flex justify-between text-xs text-emerald-600">
-
-                      <span>Desconto</span>
-
-                      <span>
-                        -{fmtBRL(selectedOrder.discount)}
-                      </span>
-
-                    </div>
-
-                  )}
-
-                  <div className="flex justify-between text-sm font-bold text-[#56443F] pt-2 border-t border-[#E4C7B7]/20">
-
-                    <span>Total</span>
-
-                    <span>
-                      {fmtBRL(selectedOrder.total)}
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                {/* STATUS */}
-
-                <div>
-
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
-                    Atualizar Status
-                  </p>
-
-                  <div className="flex flex-wrap gap-2">
-
-                    {Object.entries(statusConfig).map(
-                      ([value, config]) => (
-
-                        <button
-                          key={value}
-                          onClick={() =>
-                            updateStatus(value)
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            selectedOrder.status === value
-                              ? "bg-[#56443F] text-white border-[#56443F]"
-                              : "bg-white text-[#56443F] border-[#E4C7B7]/40 hover:bg-[#E4C7B7]/20"
-                          }`}
-                        >
-                          {config.label}
-                        </button>
 
                       )
                     )}
@@ -637,12 +512,94 @@ export default function OrdersPage() {
 
                 </div>
 
+                {/* RESUMO */}
+                <div className="bg-[#FAF9F5] rounded-lg p-4 space-y-1.5">
+
+                  <div className="flex justify-between text-xs text-[#A28776]">
+                    <span>Subtotal</span>
+
+                    <span>
+                      {fmtBRL(
+                        selectedOrder.subtotal
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between text-xs text-[#A28776]">
+                    <span>Frete</span>
+
+                    <span>
+                      {fmtBRL(
+                        selectedOrder.shipping_cost
+                      )}
+                    </span>
+                  </div>
+
+                  {selectedOrder.discount > 0 && (
+                    <div className="flex justify-between text-xs text-emerald-600">
+
+                      <span>Desconto</span>
+
+                      <span>
+                        -
+                        {fmtBRL(
+                          selectedOrder.discount
+                        )}
+                      </span>
+
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-sm font-bold text-[#56443F] pt-2 border-t border-[#E4C7B7]/20">
+
+                    <span>Total</span>
+
+                    <span>
+                      {fmtBRL(
+                        selectedOrder.total
+                      )}
+                    </span>
+
+                  </div>
+
+                </div>
+
+                {/* STATUS DO ADM */}
+                <div>
+
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
+                    Status do pedido
+                  </label>
+
+                  <select
+                    value={selectedOrder.status}
+                    onChange={(event) =>
+                      updateStatus(
+                        event.target.value
+                      )
+                    }
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm text-[#56443F] outline-none focus:border-[#8B645A]"
+                  >
+
+                    <option value="processing">
+                      Em processamento
+                    </option>
+
+                    <option value="shipped">
+                      Em trânsito
+                    </option>
+
+                    <option value="delivered">
+                      Entregue
+                    </option>
+
+                  </select>
+                </div>
+
               </div>
 
-
               {/* FOOTER */}
-
-              <div className="flex justify-end px-6 py-4 border-t bg-[#FAF9F5]">
+              <div className="flex justify-end px-6 py-4 ">
 
                 <button
                   onClick={() =>
@@ -662,7 +619,6 @@ export default function OrdersPage() {
         )}
 
       </div>
-
     </AdminLayout>
   );
 }

@@ -1,32 +1,23 @@
 import React, { useState } from "react";
 import { Eye, Check, X } from "lucide-react";
+
 import { returnsMock } from "../mocks/returnsMock";
 import AdminLayout from "../components/AdminLayout";
 
 const statusConfig = {
   requested: {
-    label: "Solicitada",
+    label: "Em troca",
     className: "bg-yellow-100 text-yellow-700",
   },
+
   approved: {
-    label: "Aprovada",
+    label: "Troca Autorizada",
     className: "bg-blue-100 text-blue-700",
   },
-  rejected: {
-    label: "Rejeitada",
-    className: "bg-red-100 text-red-700",
-  },
-  processing: {
-    label: "Processando",
-    className: "bg-purple-100 text-purple-700",
-  },
-  completed: {
-    label: "Concluída",
+
+  received: {
+    label: "Recebida",
     className: "bg-green-100 text-green-700",
-  },
-  cancelled: {
-    label: "Cancelada",
-    className: "bg-gray-100 text-gray-600",
   },
 };
 
@@ -43,10 +34,18 @@ const formatDate = (date) => {
 
 export default function ReturnsPage() {
   const [returns, setReturns] = useState(returnsMock);
+
   const [selectedReturn, setSelectedReturn] = useState(null);
+
   const [search, setSearch] = useState("");
+
   const [statusFilter, setStatusFilter] = useState("all");
-  const [notes, setNotes] = useState("");
+
+  const [showReceiptModal, setShowReceiptModal] =
+    useState(false);
+
+  const [returnToStock, setReturnToStock] =
+    useState("");
 
   const filteredReturns = returns.filter((item) => {
     const searchText = search.toLowerCase();
@@ -57,55 +56,80 @@ export default function ReturnsPage() {
       (item.order_number || "").toLowerCase().includes(searchText);
 
     const matchesStatus =
-      statusFilter === "all" || item.status === statusFilter;
+      statusFilter === "all" ||
+      item.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  const openDetails = (item) => {
-    setSelectedReturn(item);
-    setNotes(item.admin_notes || "");
-  };
-
-  const updateStatus = (id, status) => {
-    setReturns((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status,
-              admin_notes: notes,
-            }
-          : item
-      )
-    );
-
-    setSelectedReturn((current) =>
-      current
-        ? {
-            ...current,
-            status,
-            admin_notes: notes,
-          }
-        : null
-    );
-  };
-
-  const saveNotes = () => {
+  /*
+   * O ADM pode selecionar:
+   * - Em troca
+   * - Troca Autorizada
+   *
+   * "Recebida" não é selecionada manualmente.
+   * Ela acontece somente após a confirmação de recebimento.
+   */
+  const updateStatus = (newStatus) => {
     if (!selectedReturn) return;
+
+    const updatedReturn = {
+      ...selectedReturn,
+      status: newStatus,
+    };
 
     setReturns((current) =>
       current.map((item) =>
         item.id === selectedReturn.id
-          ? {
-              ...item,
-              admin_notes: notes,
-            }
+          ? updatedReturn
           : item
       )
     );
 
-    setSelectedReturn(null);
+    setSelectedReturn(updatedReturn);
+  };
+
+  /*
+   * Abre o modal para confirmar o recebimento.
+   */
+  const openReceiptModal = () => {
+    setReturnToStock("");
+    setShowReceiptModal(true);
+  };
+
+  /*
+   * Confirma o recebimento dos itens.
+   *
+   * Depois disso:
+   * - status = Recebida
+   * - registra se retorna ao estoque
+   * - gera cupom de troca
+   */
+  const confirmReceipt = () => {
+    if (!selectedReturn || !returnToStock) return;
+
+    const couponCode = `TROCA-${String(
+      selectedReturn.id
+    ).padStart(4, "0")}`;
+
+    const updatedReturn = {
+      ...selectedReturn,
+      status: "received",
+      return_to_stock: returnToStock,
+      exchange_coupon: couponCode,
+    };
+
+    setReturns((current) =>
+      current.map((item) =>
+        item.id === selectedReturn.id
+          ? updatedReturn
+          : item
+      )
+    );
+
+    setSelectedReturn(updatedReturn);
+
+    setShowReceiptModal(false);
   };
 
   return (
@@ -113,9 +137,10 @@ export default function ReturnsPage() {
       <div className="space-y-6">
 
         {/* CABEÇALHO */}
+
         <div>
           <h1 className="text-xl font-bold text-[#56443F]">
-            Devoluções e Reembolsos
+            Trocas
           </h1>
 
           <p className="text-xs text-[#A28776] mt-1">
@@ -123,34 +148,50 @@ export default function ReturnsPage() {
           </p>
         </div>
 
+
         {/* FILTROS */}
+
         <div className="flex flex-col sm:flex-row gap-3">
 
           <input
             type="text"
             placeholder="Buscar por código, cliente ou pedido..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
             className="flex-1 px-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm text-[#56443F] outline-none focus:border-[#8B645A]"
           />
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) =>
+              setStatusFilter(e.target.value)
+            }
             className="px-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm text-[#56443F] outline-none"
           >
-            <option value="all">Todos os status</option>
+            <option value="all">
+              Todos os status
+            </option>
 
-            {Object.entries(statusConfig).map(([value, config]) => (
-              <option key={value} value={value}>
-                {config.label}
-              </option>
-            ))}
+            <option value="requested">
+              Em troca
+            </option>
+
+            <option value="approved">
+              Troca Autorizada
+            </option>
+
+            <option value="received">
+              Recebida
+            </option>
           </select>
 
         </div>
 
+
         {/* TABELA */}
+
         <div className="bg-white rounded-xl border border-[#E4C7B7]/20 overflow-hidden">
 
           <div className="overflow-x-auto">
@@ -158,6 +199,7 @@ export default function ReturnsPage() {
             <table className="w-full">
 
               <thead>
+
                 <tr className="border-b border-[#E4C7B7]/20">
 
                   <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
@@ -173,11 +215,7 @@ export default function ReturnsPage() {
                   </th>
 
                   <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Reembolso
-                  </th>
-
-                  <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
-                    Método
+                    Valor
                   </th>
 
                   <th className="text-left text-[10px] font-bold uppercase tracking-wider text-[#A28776] px-5 py-3">
@@ -189,29 +227,35 @@ export default function ReturnsPage() {
                   </th>
 
                 </tr>
+
               </thead>
+
 
               <tbody>
 
                 {filteredReturns.map((item) => {
 
                   const config =
-                    statusConfig[item.status] || statusConfig.requested;
+                    statusConfig[item.status] ||
+                    statusConfig.requested;
 
                   return (
                     <tr
                       key={item.id}
-                      onClick={() => openDetails(item)}
-                      className="border-b border-[#E4C7B7]/10 hover:bg-[#FAF9F5] cursor-pointer transition-colors"
+                      className="border-b border-[#E4C7B7]/10 hover:bg-[#FAF9F5]"
                     >
 
                       <td className="px-5 py-4">
+
                         <span className="text-sm font-mono font-semibold text-[#56443F]">
                           {item.return_code}
                         </span>
+
                       </td>
 
+
                       <td className="px-5 py-4">
+
                         <p className="text-sm font-semibold text-[#56443F]">
                           {item.customer_name}
                         </p>
@@ -219,76 +263,52 @@ export default function ReturnsPage() {
                         <p className="text-xs text-[#A28776]">
                           {item.customer_email}
                         </p>
+
                       </td>
 
+
                       <td className="px-5 py-4">
+
                         <span className="text-xs text-[#A28776]">
                           {item.order_number || "—"}
                         </span>
+
                       </td>
 
+
                       <td className="px-5 py-4">
+
                         <span className="font-bold text-[#56443F]">
-                          {formatBRL(item.refund_amount)}
+                          {formatBRL(
+                            item.refund_amount
+                          )}
                         </span>
+
                       </td>
 
-                      <td className="px-5 py-4">
-                        <span className="text-xs capitalize text-[#56443F]">
-                          {item.refund_method || "—"}
-                        </span>
-                      </td>
 
                       <td className="px-5 py-4">
+
                         <span
                           className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${config.className}`}
                         >
                           {config.label}
                         </span>
+
                       </td>
+
 
                       <td className="px-5 py-4">
 
-                        <div className="flex items-center gap-1">
-
-                          {item.status === "requested" && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateStatus(item.id, "approved");
-                                }}
-                                className="p-1.5 hover:bg-green-50 rounded-lg text-green-600"
-                                title="Aprovar"
-                              >
-                                <Check size={14} />
-                              </button>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateStatus(item.id, "rejected");
-                                }}
-                                className="p-1.5 hover:bg-red-50 rounded-lg text-red-500"
-                                title="Rejeitar"
-                              >
-                                <X size={14} />
-                              </button>
-                            </>
-                          )}
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDetails(item);
-                            }}
-                            className="p-1.5 hover:bg-[#E4C7B7]/20 rounded-lg text-[#56443F]"
-                            title="Visualizar"
-                          >
-                            <Eye size={15} />
-                          </button>
-
-                        </div>
+                        <button
+                          onClick={() =>
+                            setSelectedReturn(item)
+                          }
+                          className="p-1.5 hover:bg-[#E4C7B7]/20 rounded-lg text-[#56443F]"
+                          title="Visualizar troca"
+                        >
+                          <Eye size={15} />
+                        </button>
 
                       </td>
 
@@ -296,15 +316,20 @@ export default function ReturnsPage() {
                   );
                 })}
 
+
                 {filteredReturns.length === 0 && (
+
                   <tr>
+
                     <td
-                      colSpan="7"
+                      colSpan="6"
                       className="text-center py-10 text-sm text-[#A28776]"
                     >
-                      Nenhuma devolução encontrada.
+                      Nenhuma troca encontrada.
                     </td>
+
                   </tr>
+
                 )}
 
               </tbody>
@@ -315,28 +340,51 @@ export default function ReturnsPage() {
 
         </div>
 
-        {/* MODAL */}
-        {selectedReturn && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
 
-            <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* MODAL DA TROCA */}
+
+        {selectedReturn && (
+
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+            <div
+              className="absolute inset-0 bg-[#56443F]/40 backdrop-blur-sm"
+              onClick={() =>
+                setSelectedReturn(null)
+              }
+            />
+
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
               {/* HEADER */}
+
               <div className="flex items-center justify-between px-6 py-4 border-b border-[#E4C7B7]/20">
 
                 <div>
+
                   <h2 className="text-lg font-bold text-[#56443F]">
-                    Devolução {selectedReturn.return_code}
+                    Troca{" "}
+                    {selectedReturn.return_code}
                   </h2>
 
                   <p className="text-xs text-[#A28776] mt-1">
-                    Pedido {selectedReturn.order_number || "—"} •{" "}
-                    {formatDate(selectedReturn.created_at)}
+                    Pedido{" "}
+                    {selectedReturn.order_number ||
+                      "—"}{" "}
+                    •{" "}
+                    {formatDate(
+                      selectedReturn.created_at
+                    )}
                   </p>
+
                 </div>
 
+
                 <button
-                  onClick={() => setSelectedReturn(null)}
+                  onClick={() =>
+                    setSelectedReturn(null)
+                  }
                   className="p-2 hover:bg-[#FAF9F5] rounded-lg"
                 >
                   <X size={18} />
@@ -344,52 +392,38 @@ export default function ReturnsPage() {
 
               </div>
 
+
               {/* BODY */}
+
               <div className="p-6 space-y-5">
 
-                {/* CLIENTE / REEMBOLSO */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* CLIENTE */}
 
-                  <div className="bg-[#FAF9F5] rounded-lg p-4">
+                <div className="bg-[#FAF9F5] rounded-lg p-4">
 
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
-                      Cliente
-                    </p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
+                    Cliente
+                  </p>
 
-                    <p className="text-sm font-semibold text-[#56443F]">
-                      {selectedReturn.customer_name}
-                    </p>
+                  <p className="text-sm font-semibold text-[#56443F]">
+                    {selectedReturn.customer_name}
+                  </p>
 
-                    <p className="text-xs text-[#A28776]">
-                      {selectedReturn.customer_email}
-                    </p>
-
-                  </div>
-
-                  <div className="bg-[#FAF9F5] rounded-lg p-4">
-
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
-                      Reembolso
-                    </p>
-
-                    <p className="text-lg font-bold text-[#56443F]">
-                      {formatBRL(selectedReturn.refund_amount)}
-                    </p>
-
-                    <p className="text-xs text-[#A28776] capitalize">
-                      {selectedReturn.refund_method || "—"}
-                    </p>
-
-                  </div>
+                  <p className="text-xs text-[#A28776]">
+                    {selectedReturn.customer_email}
+                  </p>
 
                 </div>
 
+
                 {/* MOTIVO */}
+
                 {selectedReturn.reason && (
+
                   <div className="bg-[#FAF9F5] rounded-lg p-4">
 
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
-                      Motivo
+                      Motivo da troca
                     </p>
 
                     <p className="text-sm text-[#56443F]">
@@ -397,107 +431,188 @@ export default function ReturnsPage() {
                     </p>
 
                   </div>
+
                 )}
 
+
                 {/* ITENS */}
+
                 {selectedReturn.items?.length > 0 && (
+
                   <div>
 
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
-                      Itens Devolvidos
+                      Itens da troca
                     </p>
 
                     <div className="space-y-2">
 
-                      {selectedReturn.items.map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-white border border-[#E4C7B7]/30 rounded-lg p-3"
-                        >
+                      {selectedReturn.items.map(
+                        (item, index) => (
 
-                          <div>
-                            <p className="text-sm font-semibold text-[#56443F]">
-                              {item.productName}
-                            </p>
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-white border border-[#E4C7B7]/30 rounded-lg p-3"
+                          >
 
-                            <p className="text-xs text-[#A28776]">
-                              Qtd: {item.quantity} • {item.reason}
-                            </p>
+                            <div>
+
+                              <p className="text-sm font-semibold text-[#56443F]">
+                                {item.productName}
+                              </p>
+
+                              <p className="text-xs text-[#A28776]">
+                                Qtd:{" "}
+                                {item.quantity}
+                              </p>
+
+                            </div>
+
                           </div>
 
-                        </div>
-                      ))}
+                        )
+                      )}
 
                     </div>
 
                   </div>
+
                 )}
 
-                {/* STATUS */}
-                <div>
 
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
-                    Status da Devolução
-                  </p>
+                {/* STATUS DA TROCA */}
 
-                  <div className="flex flex-wrap gap-2">
-
-                    {Object.entries(statusConfig).map(
-                      ([value, config]) => (
-                        <button
-                          key={value}
-                          onClick={() =>
-                            updateStatus(selectedReturn.id, value)
-                          }
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            selectedReturn.status === value
-                              ? "bg-[#56443F] text-white border-[#56443F]"
-                              : "bg-white text-[#56443F] border-[#E4C7B7]/40 hover:bg-[#E4C7B7]/20"
-                          }`}
-                        >
-                          {config.label}
-                        </button>
-                      )
-                    )}
-
-                  </div>
-
-                </div>
-
-                {/* NOTAS */}
                 <div>
 
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-2">
-                    Notas Internas
+                    Status da troca
                   </label>
 
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    placeholder="Observações sobre o processamento da devolução..."
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm text-[#56443F] outline-none focus:border-[#8B645A] resize-none"
-                  />
+                  <select
+                    value={selectedReturn.status}
+                    onChange={(e) =>
+                      updateStatus(
+                        e.target.value
+                      )
+                    }
+                    disabled={
+                      selectedReturn.status ===
+                      "received"
+                    }
+                    className="w-full px-4 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm text-[#56443F] outline-none focus:border-[#8B645A] disabled:bg-[#FAF9F5] disabled:text-[#A28776]"
+                  >
+
+                    {/* 
+                      O ADM escolhe apenas entre:
+                      Em troca
+                      Troca Autorizada
+
+                      "Recebida" NÃO fica no select.
+                    */}
+
+                    <option value="requested">
+                      Em troca
+                    </option>
+
+                    <option value="approved">
+                      Troca Autorizada
+                    </option>
+
+                  </select>
 
                 </div>
 
+
+                {/* CONFIRMAR RECEBIMENTO */}
+
+                {selectedReturn.status ===
+                  "approved" && (
+
+                  <button
+                    onClick={openReceiptModal}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-[#8B645A] text-white text-sm font-semibold hover:bg-[#705047]"
+                  >
+
+                    <Check size={16} />
+
+                    Confirmar recebimento
+
+                  </button>
+
+                )}
+
+
+                {/* INFORMAÇÕES APÓS RECEBIMENTO */}
+
+                {selectedReturn.status ===
+                  "received" && (
+
+                  <div className="space-y-3">
+
+                    <div className="bg-[#F0FDF4] border border-green-200 rounded-lg p-4">
+
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-1">
+                        Recebimento confirmado
+                      </p>
+
+                      <p className="text-sm text-green-800">
+                        Os itens da troca foram
+                        registrados como recebidos.
+                      </p>
+
+                    </div>
+
+
+                    <div className="bg-[#FAF9F5] rounded-lg p-4">
+
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
+                        Retornar ao estoque
+                      </p>
+
+                      <p className="text-sm font-semibold text-[#56443F]">
+                        {selectedReturn.return_to_stock ===
+                        "yes"
+                          ? "Sim"
+                          : "Não"}
+                      </p>
+
+                    </div>
+
+
+                    {/* CUPOM */}
+
+                    <div className="bg-[#FAF9F5] rounded-lg p-4">
+
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[#A28776] mb-1">
+                        Cupom de troca
+                      </p>
+
+                      <p className="text-lg font-bold text-[#56443F] tracking-wide">
+                        {
+                          selectedReturn.exchange_coupon
+                        }
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                )}
+
               </div>
 
+
               {/* FOOTER */}
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E4C7B7]/20">
+
+              <div className="flex justify-end px-6 py-4 border-t border-[#E4C7B7]/20 bg-[#FAF9F5]">
 
                 <button
-                  onClick={() => setSelectedReturn(null)}
-                  className="px-4 py-2 rounded-lg border border-[#E4C7B7]/40 text-sm font-semibold text-[#56443F] hover:bg-[#FAF9F5]"
+                  onClick={() =>
+                    setSelectedReturn(null)
+                  }
+                  className="px-4 py-2 rounded-lg border border-[#E4C7B7]/40 text-sm font-semibold text-[#56443F] hover:bg-white"
                 >
                   Fechar
-                </button>
-
-                <button
-                  onClick={saveNotes}
-                  className="px-4 py-2 rounded-lg bg-[#8B645A] text-white text-sm font-semibold hover:bg-[#705047]"
-                >
-                  Salvar Alterações
                 </button>
 
               </div>
@@ -505,6 +620,174 @@ export default function ReturnsPage() {
             </div>
 
           </div>
+
+        )}
+
+
+        {/* MODAL DE RECEBIMENTO */}
+
+        {showReceiptModal &&
+          selectedReturn && (
+
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+
+            <div
+              className="absolute inset-0 bg-[#56443F]/50 backdrop-blur-sm"
+              onClick={() =>
+                setShowReceiptModal(false)
+              }
+            />
+
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+              {/* HEADER */}
+
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#E4C7B7]/20">
+
+                <div>
+
+                  <h2 className="text-lg font-bold text-[#56443F]">
+                    Confirmar recebimento
+                  </h2>
+
+                  <p className="text-xs text-[#A28776] mt-1">
+                    Troca{" "}
+                    {selectedReturn.return_code}
+                  </p>
+
+                </div>
+
+
+                <button
+                  onClick={() =>
+                    setShowReceiptModal(false)
+                  }
+                  className="p-2 hover:bg-[#FAF9F5] rounded-lg"
+                >
+                  <X size={18} />
+                </button>
+
+              </div>
+
+
+              {/* BODY */}
+
+              <div className="p-6 space-y-5">
+
+                <div>
+
+                  <p className="text-sm font-semibold text-[#56443F]">
+                    Os itens da troca chegaram?
+                  </p>
+
+                  <p className="text-xs text-[#A28776] mt-1">
+                    Confirme o recebimento dos
+                    itens antes de gerar o cupom.
+                  </p>
+
+                </div>
+
+
+                {/* RETORNO AO ESTOQUE */}
+
+                <div>
+
+                  <p className="text-sm font-semibold text-[#56443F] mb-3">
+                    Os itens devem retornar ao
+                    estoque?
+                  </p>
+
+                  <div className="flex gap-3">
+
+                    <label
+                      className={`flex-1 cursor-pointer border rounded-lg p-3 text-center text-sm font-semibold transition ${
+                        returnToStock === "yes"
+                          ? "border-[#8B645A] bg-[#FAF9F5] text-[#56443F]"
+                          : "border-[#E4C7B7]/40 text-[#A28776]"
+                      }`}
+                    >
+
+                      <input
+                        type="radio"
+                        name="returnToStock"
+                        value="yes"
+                        checked={
+                          returnToStock === "yes"
+                        }
+                        onChange={(e) =>
+                          setReturnToStock(
+                            e.target.value
+                          )
+                        }
+                        className="sr-only"
+                      />
+
+                      Sim
+
+                    </label>
+
+
+                    <label
+                      className={`flex-1 cursor-pointer border rounded-lg p-3 text-center text-sm font-semibold transition ${
+                        returnToStock === "no"
+                          ? "border-[#8B645A] bg-[#FAF9F5] text-[#56443F]"
+                          : "border-[#E4C7B7]/40 text-[#A28776]"
+                      }`}
+                    >
+
+                      <input
+                        type="radio"
+                        name="returnToStock"
+                        value="no"
+                        checked={
+                          returnToStock === "no"
+                        }
+                        onChange={(e) =>
+                          setReturnToStock(
+                            e.target.value
+                          )
+                        }
+                        className="sr-only"
+                      />
+
+                      Não
+
+                    </label>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+
+              {/* FOOTER */}
+
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#E4C7B7]/20 bg-[#FAF9F5]">
+
+                <button
+                  onClick={() =>
+                    setShowReceiptModal(false)
+                  }
+                  className="px-4 py-2 rounded-lg border border-[#E4C7B7]/40 text-sm font-semibold text-[#56443F] hover:bg-white"
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  onClick={confirmReceipt}
+                  disabled={!returnToStock}
+                  className="px-4 py-2 rounded-lg bg-[#8B645A] text-white text-sm font-semibold hover:bg-[#705047] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Confirmar recebimento
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
         )}
 
       </div>

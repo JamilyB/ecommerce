@@ -9,7 +9,6 @@ import CatalogPage from "./modules/produtos/pages/CatalogPage";
 import CheckoutPage from "./modules/vendas/pages/CheckoutPage";
 import ProductsPage from "./modules/adm/pages/ProductsPage";
 import InventoryPage from "./modules/adm/pages/InventoryPage";
-import DeliveriesPage from "./modules/adm/pages/DeliveriesPage";
 import DashboardPage from "./modules/adm/pages/DashboardPage";
 import OrdersPageADM from "./modules/adm/pages/OrdersPage";
 import ReturnsPageADM from "./modules/adm/pages/ReturnsPage"
@@ -27,10 +26,11 @@ function App() {
         <Route path="/comprar" element={<CheckoutPage />} />
         <Route path="/pedidos" element={<OrdersPage />} />
         <Route path="/devolucoes" element={<ReturnsPage />} />
-        <Route path="/inventario" element={<InventoryPage />} />
-        <Route path="/entregas" element={<DeliveriesPage />} /> 
+        <Route path="/inventario" element={<InventoryPage />} /> 
         <Route path="/perfil" element={<ProfilePage />} />
         <Route path="/cadastrar" element={<RegisterPage />} />
+        <Route path="/vendas" element={<OrdersPageADM />} />
+        <Route path="/adm/devolucoes" element={<ReturnsPageADM />} />
       </Routes>
     </BrowserRouter>
   );
