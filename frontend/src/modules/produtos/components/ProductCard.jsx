@@ -49,7 +49,7 @@ export default function ProductCard({ product }) {
 
         <button className="w-full py-2.5 bg-[#FAF9F5] hover:bg-[#E4C7B7]/20 text-[#8B645A] border border-[#E4C7B7]/60 text-xs font-bold tracking-wider uppercase rounded-md transition-colors flex items-center justify-center gap-1.5">
           <ShoppingBag size={13} />
-          <span>Adicionar à Sacola</span>
+          <span>Adicionar</span>
         </button>
       </div>
     </div>
