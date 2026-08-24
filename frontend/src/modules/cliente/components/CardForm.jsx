@@ -5,14 +5,6 @@ const CardForm = ({ form, setForm }) => {
   return (
     <div className="space-y-4">
 
-      <div className="flex items-center gap-2 mb-2">
-        <CreditCard size={16} className="text-[#8B645A]" />
-
-        <h2 className="font-serif text-lg font-semibold text-[#56443F]">
-          Cartão
-        </h2>
-      </div>
-
       <FormField
         label="Número do Cartão"
         value={form.cardNumber}
