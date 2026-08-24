@@ -1,14 +1,21 @@
+import { useState } from "react";
 import {
-  Calendar,
-  Flame,
-  Truck,
-  CheckCircle2,
   Package,
+  X,
+  Check,
 } from "lucide-react";
 
 import { ordersMock } from "../../adm/mocks/ordersMock";
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState(ordersMock);
+
+  const [confirmation, setConfirmation] = useState({
+    open: false,
+    type: null,
+    orderId: null,
+  });
+
   const getStatus = (status) => {
     switch (status) {
       case "confirmed":
@@ -39,6 +46,13 @@ export default function OrdersPage() {
             "bg-emerald-50 text-emerald-700 border border-emerald-200",
         };
 
+      case "cancelled":
+        return {
+          label: "Cancelado",
+          className:
+            "bg-red-50 text-red-700 border border-red-200",
+        };
+
       case "pending":
         return {
           label: "Pendente",
@@ -60,6 +74,42 @@ export default function OrdersPage() {
     return new Date(date).toLocaleDateString("pt-BR");
   };
 
+  const openConfirmation = (type, orderId) => {
+    setConfirmation({
+      open: true,
+      type,
+      orderId,
+    });
+  };
+
+  const closeConfirmation = () => {
+    setConfirmation({
+      open: false,
+      type: null,
+      orderId: null,
+    });
+  };
+
+  const confirmAction = () => {
+    setOrders((currentOrders) =>
+      currentOrders.map((order) => {
+        if (order.id !== confirmation.orderId) {
+          return order;
+        }
+
+        return {
+          ...order,
+          status:
+            confirmation.type === "cancel"
+              ? "cancelled"
+              : "delivered",
+        };
+      })
+    );
+
+    closeConfirmation();
+  };
+
   return (
     <div className="animate-fade-in max-w-3xl mx-auto px-6 py-16 text-left space-y-12">
 
@@ -79,7 +129,7 @@ export default function OrdersPage() {
       {/* Pedidos */}
       <div className="space-y-6 max-w-xl mx-auto">
 
-        {ordersMock.map((order) => {
+        {orders.map((order) => {
           const status = getStatus(order.status);
 
           return (
@@ -102,6 +152,7 @@ export default function OrdersPage() {
                     <span>
                       Realizado em {formatDate(order.created_at)}
                     </span>
+
                   </div>
 
                 </div>
@@ -127,7 +178,7 @@ export default function OrdersPage() {
                   >
 
                     <div className="w-10 h-12 bg-[#F1F0E2]/30 border rounded-md p-0.5 flex-shrink-0">
-                        {/*Imagem do produto*/}
+                      {/* Imagem do produto */}
                     </div>
 
                     <div className="flex-grow">
@@ -170,21 +221,53 @@ export default function OrdersPage() {
 
                 </div>
 
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+
+                  {/* CANCELAR PEDIDO */}
+
+                  {order.status !== "delivered" &&
+                    order.status !== "cancelled" && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openConfirmation(
+                            "cancel",
+                            order.id
+                          )
+                        }
+                        className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
+                      >
+                        Cancelar Pedido
+                      </button>
+                    )}
+
+                  {/* CONFIRMAR RECEBIMENTO */}
+
+                  {order.status === "shipped" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openConfirmation(
+                          "receive",
+                          order.id
+                        )
+                      }
+                      className="w-full sm:w-auto px-4 py-2 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
+                    >
+                      Confirmar Recebimento
+                    </button>
+                  )}
+
+                  {/* DEVOLUÇÃO */}
 
                   {order.status === "delivered" && (
                     <button
+                      type="button"
                       className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-[#E4C7B7]/15 text-[#8B645A] border border-[#E4C7B7] rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       Solicitar Devolução
                     </button>
                   )}
-
-                  <button
-                    className="w-full sm:w-auto px-4 py-2 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <span>Rastrear Encomenda</span>
-                  </button>
 
                 </div>
 
@@ -195,6 +278,98 @@ export default function OrdersPage() {
         })}
 
       </div>
+
+      {/* =====================================================
+          MODAL DE CONFIRMAÇÃO
+      ====================================================== */}
+
+      {confirmation.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
+
+            {/* Fechar */}
+
+            <div className="flex justify-end">
+
+              <button
+                type="button"
+                onClick={closeConfirmation}
+                className="text-[#A28776] hover:text-[#56443F]"
+              >
+                <X size={18} />
+              </button>
+
+            </div>
+
+            {/* Conteúdo */}
+
+            <div className="text-center space-y-3">
+
+              <div className="w-12 h-12 mx-auto rounded-full bg-[#E4C7B7]/20 flex items-center justify-center">
+
+                {confirmation.type === "cancel" ? (
+                  <X
+                    size={20}
+                    className="text-red-500"
+                  />
+                ) : (
+                  <Check
+                    size={20}
+                    className="text-[#8B645A]"
+                  />
+                )}
+
+              </div>
+
+              <h3 className="font-serif text-xl font-semibold text-[#56443F]">
+
+                {confirmation.type === "cancel"
+                  ? "Cancelar pedido?"
+                  : "Confirmar recebimento?"}
+
+              </h3>
+
+              <p className="text-xs text-[#A28776]">
+
+                {confirmation.type === "cancel"
+                  ? "Tem certeza que deseja cancelar este pedido? Essa ação não poderá ser desfeita."
+                  : "Confirma que você recebeu este pedido? O pedido será marcado como entregue."}
+
+              </p>
+
+            </div>
+
+            {/* Ações */}
+
+            <div className="flex gap-3 mt-6">
+
+              <button
+                type="button"
+                onClick={closeConfirmation}
+                className="flex-1 py-3 border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase text-[#8B645A] hover:bg-[#E4C7B7]/10"
+              >
+                Voltar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmAction}
+                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase text-white ${
+                  confirmation.type === "cancel"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-[#56443F] hover:bg-[#8B645A]"
+                }`}
+              >
+                Confirmar
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
 
     </div>
   );
