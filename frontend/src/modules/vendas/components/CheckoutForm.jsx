@@ -6,6 +6,8 @@ import {
   QrCode,
   Plus,
   Check,
+  X,
+  Tag,
 } from "lucide-react";
 
 import {
@@ -14,12 +16,49 @@ import {
   cardsMock,
 } from "../../cliente/mocks/clientMock";
 
+// Mock temporário de cupons
+const couponsMock = [
+  {
+    id: 1,
+    code: "BEMVINDO10",
+    description: "10% de desconto na primeira compra",
+    discount: 10,
+    type: "percentage",
+  },
+  {
+    id: 2,
+    code: "JASMIN15",
+    description: "R$ 15,00 de desconto",
+    discount: 15,
+    type: "fixed",
+  },
+  {
+    id: 3,
+    code: "VELA20",
+    description: "20% de desconto em produtos selecionados",
+    discount: 20,
+    type: "percentage",
+  },
+];
+
 export default function CheckoutForm({
   step,
   setStep,
   onFinish,
 }) {
   const [paymentMethod, setPaymentMethod] = useState("card");
+
+  // =========================
+  // CUPOM
+  // =========================
+
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+
+  const selectCoupon = (coupon) => {
+    setSelectedCoupon(coupon);
+    setCouponModalOpen(false);
+  };
 
   // =========================
   // ENDEREÇO
@@ -62,10 +101,8 @@ export default function CheckoutForm({
   // CARTÃO
   // =========================
 
-  const [selectedCard, setSelectedCard] = useState(
-    cardsMock?.find((card) => card.isDefault)?.id ||
-      cardsMock?.[0]?.id ||
-      null
+  const [selectedCards, setSelectedCards] = useState(
+    cardsMock?.[0]?.id ? [cardsMock[0].id] : []
   );
 
   const [useNewCard, setUseNewCard] = useState(false);
@@ -86,7 +123,12 @@ export default function CheckoutForm({
   };
 
   const selectExistingCard = (id) => {
-    setSelectedCard(id);
+    setSelectedCards((current) =>
+      current.includes(id)
+        ? current.filter((cardId) => cardId !== id)
+        : [...current, id]
+    );
+
     setUseNewCard(false);
   };
 
@@ -164,9 +206,7 @@ export default function CheckoutForm({
 
           </div>
 
-          {/* =====================================================
-              ENDEREÇOS
-          ====================================================== */}
+          {/* ENDEREÇOS */}
 
           <div className="border-t border-[#E4C7B7]/20 pt-5">
 
@@ -198,8 +238,6 @@ export default function CheckoutForm({
               </button>
 
             </div>
-
-            {/* ENDEREÇOS CADASTRADOS */}
 
             {!useNewAddress && (
               <div className="space-y-3">
@@ -279,15 +317,16 @@ export default function CheckoutForm({
               </div>
             )}
 
-            {/* NOVO ENDEREÇO */}
-
             {useNewAddress && (
               <div className="space-y-4">
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Tipo de residência *
                     </label>
+
                     <select
                       value={newAddress.residenceType}
                       onChange={(e) =>
@@ -298,21 +337,14 @@ export default function CheckoutForm({
                       }
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs bg-white"
                     >
-                      <option value="">
-                        Selecione
-                      </option>
+                      <option value="">Selecione</option>
                       <option value="Casa">Casa</option>
-                      <option value="Apartamento">
-                        Apartamento
-                      </option>
-                      <option value="Sobrado">
-                        Sobrado
-                      </option>
-                      <option value="Comercial">
-                        Comercial
-                      </option>
+                      <option value="Apartamento">Apartamento</option>
+                      <option value="Sobrado">Sobrado</option>
+                      <option value="Comercial">Comercial</option>
                     </select>
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Tipo de logradouro *
@@ -328,24 +360,15 @@ export default function CheckoutForm({
                       }
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs bg-white"
                     >
-                      <option value="">
-                        Selecione
-                      </option>
+                      <option value="">Selecione</option>
                       <option value="Rua">Rua</option>
-                      <option value="Avenida">
-                        Avenida
-                      </option>
-                      <option value="Alameda">
-                        Alameda
-                      </option>
-                      <option value="Travessa">
-                        Travessa
-                      </option>
-                      <option value="Estrada">
-                        Estrada
-                      </option>
+                      <option value="Avenida">Avenida</option>
+                      <option value="Alameda">Alameda</option>
+                      <option value="Travessa">Travessa</option>
+                      <option value="Estrada">Estrada</option>
                     </select>
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Logradouro *
@@ -363,6 +386,7 @@ export default function CheckoutForm({
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Número *
@@ -380,6 +404,7 @@ export default function CheckoutForm({
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Bairro *
@@ -397,6 +422,7 @@ export default function CheckoutForm({
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       CEP *
@@ -414,6 +440,7 @@ export default function CheckoutForm({
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Cidade *
@@ -431,6 +458,7 @@ export default function CheckoutForm({
                       className="w-full mt-1 border border-[#E4C7B7]/40 rounded-lg p-3 text-xs"
                     />
                   </div>
+
                   <div>
                     <label className="text-[9px] uppercase font-bold text-[#8B645A]">
                       Estado *
@@ -515,12 +543,76 @@ export default function CheckoutForm({
             </h2>
 
             <p className="text-xs text-[#A28776] mt-1">
-              Escolha uma forma de pagamento.
+              Combine cupons e formas de pagamento.
             </p>
           </div>
 
+          {/* CUPOM */}
+
+          <div className="border border-[#E4C7B7]/30 rounded-lg p-4">
+
+            <div className="flex items-center justify-between gap-3">
+
+              <div className="flex items-center gap-2">
+
+                <Tag size={16} className="text-[#8B645A]" />
+
+                <div>
+                  <p className="text-xs font-bold text-[#56443F]">
+                    Cupom
+                  </p>
+
+                  <p className="text-[10px] text-[#A28776]">
+                    {selectedCoupon
+                      ? `${selectedCoupon.code} aplicado`
+                      : "Consulte seus cupons disponíveis"}
+                  </p>
+                </div>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCouponModalOpen(true)}
+                className="text-[10px] font-bold text-[#8B645A]"
+              >
+                {selectedCoupon
+                  ? "Alterar"
+                  : "Consultar cupons"}
+              </button>
+
+            </div>
+
+            {selectedCoupon && (
+              <div className="mt-3 flex items-center justify-between bg-[#E4C7B7]/10 rounded-lg px-3 py-2">
+
+                <div>
+                  <span className="text-[10px] font-bold text-[#56443F]">
+                    {selectedCoupon.code}
+                  </span>
+
+                  <p className="text-[9px] text-[#A28776]">
+                    {selectedCoupon.description}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedCoupon(null)}
+                  className="text-[10px] text-[#8B645A] font-bold"
+                >
+                  Remover
+                </button>
+
+              </div>
+            )}
+
+          </div>
+
+          {/* FORMAS DE PAGAMENTO */}
+
           <div className="grid grid-cols-3 gap-3">
-            
+
             <button
               type="button"
               onClick={() => setPaymentMethod("card")}
@@ -571,9 +663,7 @@ export default function CheckoutForm({
 
           </div>
 
-          {/* =====================================================
-              CARTÃO
-          ====================================================== */}
+          {/* CARTÃO */}
 
           {paymentMethod === "card" && (
             <div className="space-y-4">
@@ -586,7 +676,7 @@ export default function CheckoutForm({
                   </h3>
 
                   <p className="text-[10px] text-[#A28776] mt-1">
-                    Selecione um cartão cadastrado ou adicione um novo.
+                    Selecione um ou mais cartões.
                   </p>
                 </div>
 
@@ -607,8 +697,6 @@ export default function CheckoutForm({
 
               </div>
 
-              {/* CARTÕES CADASTRADOS */}
-
               {!useNewCard && (
                 <div className="space-y-3">
 
@@ -620,7 +708,7 @@ export default function CheckoutForm({
                         selectExistingCard(card.id)
                       }
                       className={`w-full text-left border rounded-lg p-4 ${
-                        selectedCard === card.id
+                        selectedCards.includes(card.id)
                           ? "border-[#8B645A] bg-[#E4C7B7]/10"
                           : "border-[#E4C7B7]/30"
                       }`}
@@ -632,12 +720,12 @@ export default function CheckoutForm({
 
                           <div
                             className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              selectedCard === card.id
+                              selectedCards.includes(card.id)
                                 ? "border-[#8B645A]"
                                 : "border-[#C9B5A9]"
                             }`}
                           >
-                            {selectedCard === card.id && (
+                            {selectedCards.includes(card.id) && (
                               <div className="w-2 h-2 rounded-full bg-[#8B645A]" />
                             )}
                           </div>
@@ -759,6 +847,12 @@ export default function CheckoutForm({
                 </div>
               )}
 
+              {selectedCards.length > 1 && !useNewCard && (
+                <p className="text-[10px] text-[#8B645A]">
+                  {selectedCards.length} cartões selecionados para pagamento.
+                </p>
+              )}
+
             </div>
           )}
 
@@ -775,6 +869,12 @@ export default function CheckoutForm({
               <p className="text-xs text-[#56443F]">
                 Escaneie o QR Code para realizar o pagamento.
               </p>
+
+              {selectedCoupon && (
+                <p className="text-[10px] text-[#8B645A] mt-2">
+                  Cupom {selectedCoupon.code} aplicado.
+                </p>
+              )}
 
             </div>
           )}
@@ -793,6 +893,12 @@ export default function CheckoutForm({
                 O boleto será gerado após a confirmação.
               </p>
 
+              {selectedCoupon && (
+                <p className="text-[10px] text-[#8B645A] mt-2">
+                  Cupom {selectedCoupon.code} aplicado.
+                </p>
+              )}
+
             </div>
           )}
 
@@ -806,6 +912,100 @@ export default function CheckoutForm({
             <Check size={14} />
             Confirmar pedido
           </button>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          MODAL DE CUPONS
+      ====================================================== */}
+
+      {couponModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setCouponModalOpen(false)}
+          />
+
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+
+            <div className="flex items-center justify-between mb-5">
+
+              <div>
+                <h3 className="font-serif text-lg font-bold text-[#56443F]">
+                  Meus cupons
+                </h3>
+
+                <p className="text-[10px] text-[#A28776] mt-1">
+                  Selecione um cupom disponível.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCouponModalOpen(false)}
+                className="p-2 rounded-lg hover:bg-[#E4C7B7]/20"
+              >
+                <X size={18} />
+              </button>
+
+            </div>
+
+            <div className="space-y-3">
+
+              {couponsMock.map((coupon) => (
+                <button
+                  type="button"
+                  key={coupon.id}
+                  onClick={() => selectCoupon(coupon)}
+                  className={`w-full text-left border rounded-lg p-4 transition-colors ${
+                    selectedCoupon?.id === coupon.id
+                      ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                      : "border-[#E4C7B7]/30 hover:bg-[#FAF9F5]"
+                  }`}
+                >
+
+                  <div className="flex items-start gap-3">
+
+                    <div className="w-9 h-9 rounded-lg bg-[#E4C7B7]/20 flex items-center justify-center shrink-0">
+                      <Tag
+                        size={16}
+                        className="text-[#8B645A]"
+                      />
+                    </div>
+
+                    <div className="flex-1">
+
+                      <div className="flex items-center justify-between">
+
+                        <span className="text-xs font-bold text-[#56443F]">
+                          {coupon.code}
+                        </span>
+
+                        {selectedCoupon?.id === coupon.id && (
+                          <Check
+                            size={15}
+                            className="text-[#8B645A]"
+                          />
+                        )}
+
+                      </div>
+
+                      <p className="text-[10px] text-[#A28776] mt-1">
+                        {coupon.description}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </button>
+              ))}
+
+            </div>
+
+          </div>
 
         </div>
       )}
