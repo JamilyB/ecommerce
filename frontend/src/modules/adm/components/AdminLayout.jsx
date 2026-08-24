@@ -27,16 +27,6 @@ const navGroups = [
   },
   {
     label: 'Catálogo',
-    items: [
-      {
-        page: 'products',
-        label: 'Produtos',
-        icon: Package,
-        path: '/produtos',
-      },
-
-      // Categorias será implementado posteriormente
-
       {
         page: 'inventory',
         label: 'Estoque',
@@ -55,8 +45,6 @@ const navGroups = [
         path: '/vendas',
       },
 
-      // Entregas será implementado posteriormente
-
       {
         page: 'returns',
         label: 'Devoluções',
@@ -64,7 +52,6 @@ const navGroups = [
         path: '/adm/devolucoes',
       },
 
-      // Cupons será implementado posteriormente
     ],
   },
   {
@@ -79,7 +66,6 @@ const navGroups = [
     ],
   },
 
-  // Configurações será implementado posteriormente
 ];
 
 export default function AdminLayout({ children }) {
