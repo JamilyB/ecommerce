@@ -69,7 +69,7 @@ export const productMock = [
     subtitle: "Café expresso forte, calda de chocolate e canela",
     price: 96.00,
     image:
-      "https://res.cloudinary.com/pjzckky0/image/upload/v1783519992/download_2_cbpcuk.webp",
+      "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
 
     collection: "cafe",
     aroma: "Cappuccino",
@@ -165,7 +165,7 @@ export const productMock = [
     subtitle: "Framboesa fresca, creme batido e cera em gel",
     price: 98.00,
     image:
-      "https://res.cloudinary.com/pjzckky0/image/upload/f_auto,q_auto/download_1_kg4qfz",
+      "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
 
     collection: "gourmet",
     aroma: "Framboesa",
