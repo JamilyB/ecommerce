@@ -1,50 +1,95 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Package, FolderTree, Boxes, ShoppingCart, Truck, RotateCcw, Ticket, Star, Users, Shield, Settings, Menu, X, ChevronRight, Store,} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Package,
+  Boxes,
+  ShoppingCart,
+  RotateCcw,
+  Users,
+  Menu,
+  X,
+  ChevronRight,
+  Store,
+} from 'lucide-react';
 
 const navGroups = [
   {
     label: 'Visão Geral',
     items: [
-      { page: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      {
+        page: 'dashboard',
+        label: 'Dashboard',
+        icon: LayoutDashboard,
+        path: '/dashboard',
+      },
     ],
   },
   {
     label: 'Catálogo',
     items: [
-      { page: 'products', label: 'Produtos', icon: Package },
-      { page: 'categories', label: 'Categorias', icon: FolderTree },
-      { page: 'inventory', label: 'Estoque', icon: Boxes },
+      {
+        page: 'products',
+        label: 'Produtos',
+        icon: Package,
+        path: '/produtos',
+      },
+
+      // Categorias será implementado posteriormente
+
+      {
+        page: 'inventory',
+        label: 'Estoque',
+        icon: Boxes,
+        path: '/produtos',
+      },
     ],
   },
   {
     label: 'Vendas',
     items: [
-      { page: 'orders', label: 'Pedidos', icon: ShoppingCart },
-      { page: 'deliveries', label: 'Entregas', icon: Truck },
-      { page: 'returns', label: 'Devoluções', icon: RotateCcw },
-      { page: 'coupons', label: 'Cupons', icon: Ticket },
+      {
+        page: 'orders',
+        label: 'Pedidos',
+        icon: ShoppingCart,
+        path: '/vendas',
+      },
+
+      // Entregas será implementado posteriormente
+
+      {
+        page: 'returns',
+        label: 'Devoluções',
+        icon: RotateCcw,
+        path: '/adm/devolucoes',
+      },
+
+      // Cupons será implementado posteriormente
     ],
   },
   {
     label: 'Comunidade',
     items: [
-      { page: 'customers', label: 'Clientes', icon: Users },
+      {
+        page: 'customers',
+        label: 'Clientes',
+        icon: Users,
+        path: '/clientes',
+      },
     ],
   },
-  {
-    label: 'Sistema',
-    items: [
-      { page: 'settings', label: 'Configurações', icon: Settings },
-    ],
-  },
+
+  // Configurações será implementado posteriormente
 ];
 
 export default function AdminLayout({ children }) {
-  const [currentPage, setCurrentPage] = useState('admins');
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleNav = (page) => {
-    setCurrentPage(page);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNav = (path) => {
+    navigate(path);
     setMobileOpen(false);
   };
 
@@ -82,12 +127,13 @@ export default function AdminLayout({ children }) {
 
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active = currentPage === item.page;
+
+                const active = location.pathname === item.path;
 
                 return (
                   <button
                     key={item.page}
-                    onClick={() => handleNav(item.page)}
+                    onClick={() => handleNav(item.path)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                       active
                         ? 'bg-[#8B645A] text-white shadow-sm'
@@ -196,7 +242,7 @@ export default function AdminLayout({ children }) {
           <div className="flex items-center gap-3">
 
             <a
-              href="/"
+              href="/catalogo"
               className="text-xs font-semibold text-[#56443F] hover:text-[#8B645A] transition-colors flex items-center gap-1.5"
             >
               <Store size={14} />
