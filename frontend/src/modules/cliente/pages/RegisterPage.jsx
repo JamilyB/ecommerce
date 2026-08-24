@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Plus, Trash2, CreditCard, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import PersonalDataForm from '../components/PersonalDataForm';
 import AddressForm from '../components/AddressForm';
 import CardForm from '../components/CardForm';
+
 
 const createEmptyAddress = () => ({
   id: Date.now(),
@@ -78,14 +80,16 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    console.log({
-      personalData,
-      addresses,
-      card: addCard ? card : null,
-    });
-  };
+  console.log({
+    personalData,
+    addresses,
+    card: addCard ? card : null,
+  });
+
+  navigate('/catalogo');
+};
 
   return (
     <div className="animate-fade-in max-w-5xl mx-auto px-6 py-12">
