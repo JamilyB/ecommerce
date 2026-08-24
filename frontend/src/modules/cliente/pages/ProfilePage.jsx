@@ -7,6 +7,7 @@ import CardsTab from '../components/CardsTab';
 import {
   User,
   MapPin,
+  Power,
   CreditCard,
   Plus,
   Trash2,
@@ -108,12 +109,22 @@ export const ProfilePage = () => {
       <div className="max-w-2xl mx-auto">
 
         {activeTab === 'personal' && (
-          <PersonalDataTab
-            userProfile={clientMock}
-            editing={editingProfile}
-            setEditing={setEditingProfile}
-          />
-        )}
+            <>
+              <PersonalDataTab
+                userProfile={clientMock}
+                editing={editingProfile}
+                setEditing={setEditingProfile}
+              />
+          
+              <button
+                type="button"
+                onClick={() => alert("Conta inativada com sucesso.")}
+                className="w-full mt-4 py-3 border border-[#E4C7B7]/40 rounded-lg text-xs font-bold text-[#8B645A] hover:bg-[#E4C7B7]/10"
+              >
+                Inativar minha conta
+              </button>
+            </>
+          )}
 
         {activeTab === 'addresses' && (
           <AddressesTab
