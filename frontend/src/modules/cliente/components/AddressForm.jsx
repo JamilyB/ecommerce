@@ -1,7 +1,14 @@
 import { MapPin } from 'lucide-react';
 import FormField from './FormField';
+import { validateEnderecoForm } from '../../../shared/validation/validation.js';
+import { maskCEP } from '../../../shared/validation/masks.js';
 
-const AddressForm = ({ form, setForm }) => {
+const AddressForm = ({ form, setForm, errors = {}, touched = {}, setTouched = () => {} }) => {
+  const validationErrors = { ...validateEnderecoForm(form), ...errors };
+  const markTouched = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   return (
     <div className="space-y-4">
 
@@ -31,6 +38,7 @@ const AddressForm = ({ form, setForm }) => {
           })
         }
         placeholder="Ex.: Casa, Trabalho"
+        error={validationErrors.label}
       />
 
 
@@ -43,13 +51,16 @@ const AddressForm = ({ form, setForm }) => {
 
         <select
           value={form.residenceType}
-          onChange={(e) =>
+          onChange={(e) => {
+            markTouched('residenceType');
             setForm({
               ...form,
               residenceType: e.target.value,
-            })
-          }
-          className="w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border border-[#E4C7B7]/40 rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A]"
+            });
+          }}
+          className={`w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] ${
+            validationErrors.residenceType && touched.residenceType ? 'border-red-300' : 'border-[#E4C7B7]/40'
+          }`}
         >
           <option value="">
             Selecione
@@ -87,13 +98,16 @@ const AddressForm = ({ form, setForm }) => {
 
           <select
             value={form.streetType}
-            onChange={(e) =>
+            onChange={(e) => {
+              markTouched('streetType');
               setForm({
                 ...form,
                 streetType: e.target.value,
-              })
-            }
-            className="w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border border-[#E4C7B7]/40 rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A]"
+              });
+            }}
+            className={`w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] ${
+              validationErrors.streetType && touched.streetType ? 'border-red-300' : 'border-[#E4C7B7]/40'
+            }`}
           >
             <option value="">
               Tipo
@@ -135,13 +149,16 @@ const AddressForm = ({ form, setForm }) => {
         <FormField
           label="Logradouro"
           value={form.street}
-          onChange={(v) =>
+          onChange={(v) => {
+            markTouched('street');
             setForm({
               ...form,
               street: v,
-            })
-          }
+            });
+          }}
           placeholder="Nome da rua"
+          error={validationErrors.street}
+          showError={!!touched.street}
         />
 
       </div>
@@ -153,25 +170,31 @@ const AddressForm = ({ form, setForm }) => {
         <FormField
           label="Número"
           value={form.number}
-          onChange={(v) =>
+          onChange={(v) => {
+            markTouched('number');
             setForm({
               ...form,
               number: v,
-            })
-          }
+            });
+          }}
           placeholder="123"
+          error={validationErrors.number}
+          showError={!!touched.number}
         />
 
         <FormField
           label="Bairro"
           value={form.neighborhood}
-          onChange={(v) =>
+          onChange={(v) => {
+            markTouched('neighborhood');
             setForm({
               ...form,
               neighborhood: v,
-            })
-          }
+            });
+          }}
           placeholder="Centro"
+          error={validationErrors.neighborhood}
+          showError={!!touched.neighborhood}
         />
 
       </div>
@@ -181,13 +204,17 @@ const AddressForm = ({ form, setForm }) => {
       <FormField
         label="CEP"
         value={form.cep}
-        onChange={(v) =>
+        onChange={(v) => {
+          markTouched('cep');
           setForm({
             ...form,
-            cep: v,
-          })
-        }
+            cep: maskCEP(v),
+          });
+        }}
         placeholder="00000-000"
+        error={validationErrors.cep}
+        showError={!!touched.cep}
+        inputMode="numeric"
       />
 
 
@@ -197,13 +224,16 @@ const AddressForm = ({ form, setForm }) => {
         <FormField
           label="Cidade"
           value={form.city}
-          onChange={(v) =>
+          onChange={(v) => {
+            markTouched('city');
             setForm({
               ...form,
               city: v,
-            })
-          }
+            });
+          }}
           placeholder="São Paulo"
+          error={validationErrors.city}
+          showError={!!touched.city}
         />
 
 
@@ -215,13 +245,16 @@ const AddressForm = ({ form, setForm }) => {
 
           <select
             value={form.state}
-            onChange={(e) =>
+            onChange={(e) => {
+              markTouched('state');
               setForm({
                 ...form,
                 state: e.target.value,
-              })
-            }
-            className="w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border border-[#E4C7B7]/40 rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A]"
+              });
+            }}
+            className={`w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] ${
+              validationErrors.state && touched.state ? 'border-red-300' : 'border-[#E4C7B7]/40'
+            }`}
           >
             <option value="">
               Selecione

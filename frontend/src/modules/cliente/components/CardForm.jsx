@@ -1,32 +1,46 @@
 import { CreditCard } from 'lucide-react';
 import FormField from './FormField';
+import { validateCartaoForm } from '../../../shared/validation/validation.js';
+import { maskCardNumber, maskCVV, maskExpiry } from '../../../shared/validation/masks.js';
 
-const CardForm = ({ form, setForm }) => {
+const CardForm = ({ form, setForm, errors = {}, touched = {}, setTouched = () => {} }) => {
+  const validationErrors = { ...validateCartaoForm(form), ...errors };
+  const markTouched = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   return (
     <div className="space-y-4">
 
       <FormField
         label="Número do Cartão"
         value={form.cardNumber}
-        onChange={(v) =>
+        onChange={(v) => {
+          markTouched('cardNumber');
           setForm((prev) => ({
             ...prev,
-            cardNumber: v,
-          }))
-        }
+            cardNumber: maskCardNumber(v),
+          }));
+        }}
         placeholder="0000 0000 0000 0000"
+        error={validationErrors.cardNumber}
+        showError={!!touched.cardNumber}
+        inputMode="numeric"
       />
 
       <FormField
         label="Nome impresso no cartão"
         value={form.holderName}
-        onChange={(v) =>
+        onChange={(v) => {
+          markTouched('holderName');
           setForm((prev) => ({
             ...prev,
             holderName: v,
-          }))
-        }
+          }));
+        }}
         placeholder="NOME COMPLETO"
+        error={validationErrors.holderName}
+        showError={!!touched.holderName}
       />
 
       <div>
@@ -36,13 +50,16 @@ const CardForm = ({ form, setForm }) => {
 
         <select
           value={form.brand}
-          onChange={(e) =>
+          onChange={(e) => {
+            markTouched('brand');
             setForm((prev) => ({
               ...prev,
               brand: e.target.value,
-            }))
-          }
-          className="w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border border-[#E4C7B7]/40 rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] transition-colors"
+            }));
+          }}
+          className={`w-full text-sm font-semibold text-[#56443F] bg-[#F1F0E2]/30 border rounded-lg px-3 py-2 focus:outline-none focus:border-[#8B645A] transition-colors ${
+            validationErrors.brand && touched.brand ? 'border-red-300' : 'border-[#E4C7B7]/40'
+          }`}
         >
           <option value="">Selecione a bandeira</option>
           <option value="Visa">Visa</option>
@@ -50,18 +67,25 @@ const CardForm = ({ form, setForm }) => {
           <option value="Elo">Elo</option>
           <option value="American Express">American Express</option>
         </select>
+        {validationErrors.brand && (
+          <p className="text-[11px] text-red-500 mt-1">{validationErrors.brand}</p>
+        )}
       </div>
 
       <FormField
         label="Código de segurança (CVV)"
         value={form.cvv}
-        onChange={(v) =>
+        onChange={(v) => {
+          markTouched('cvv');
           setForm((prev) => ({
             ...prev,
-            cvv: v,
-          }))
-        }
+            cvv: maskCVV(v),
+          }));
+        }}
         placeholder="123"
+        error={validationErrors.cvv}
+        showError={!!touched.cvv}
+        inputMode="numeric"
       />
 
       <div className="pt-3 border-t border-[#E4C7B7]/30">

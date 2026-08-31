@@ -7,6 +7,7 @@ import {
 
 import AdminLayout from "../components/AdminLayout";
 import { ordersMock } from "../mocks/ordersMock";
+import { validateDateRange } from "../../../shared/validation/validation.js";
 
 /* =========================================================
    CORES DAS CATEGORIAS
@@ -143,10 +144,8 @@ export default function DashboardPage() {
      ERRO DE DATA
   ======================================================= */
 
-  const dateError =
-    startDate &&
-    endDate &&
-    endDate < startDate;
+  const dateErrors = validateDateRange(startDate, endDate);
+  const dateError = dateErrors.dateOrder || dateErrors.periodRange;
 
   /* =======================================================
      ALTERAÇÃO DE CATEGORIA
@@ -790,8 +789,7 @@ export default function DashboardPage() {
             {dateError && (
 
               <p className="text-[11px] text-red-500 font-semibold mt-2">
-                A data final não pode ser anterior à
-                data inicial.
+                {dateError}
               </p>
 
             )}

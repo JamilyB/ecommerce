@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Boxes, AlertCircle, Save } from "lucide-react";
+import { Boxes, AlertCircle, Save, Trash2 } from "lucide-react";
 import { productsMock } from "../mocks/productsMock";
 import AdminLayout from "../components/AdminLayout";
+import { validateEstoqueEntry } from "../../../shared/validation/validation.js";
 
 const fmtBRL = (value) =>
   value.toLocaleString("pt-BR", {
@@ -12,9 +13,32 @@ const fmtBRL = (value) =>
 export default function InventoryPage() {
   const [products, setProducts] = useState(productsMock);
   const [editingStock, setEditingStock] = useState({});
+  const [stockTouched, setStockTouched] = useState({});
 
   function saveStock(id) {
     const newStock = Number(editingStock[id]);
+    const product = products.find((item) => item.id === id);
+
+    const errors = validateEstoqueEntry({
+      supplier: product?.supplier || "Fornecedor padrão",
+      entryDate:
+        product?.entryDate ||
+        new Date().toISOString().slice(0, 10),
+      quantity: newStock,
+      costValue:
+        product?.costValue ??
+        product?.cost ??
+        0,
+    });
+
+    setStockTouched((current) => ({
+      ...current,
+      [id]: true,
+    }));
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
 
     setProducts((currentProducts) =>
       currentProducts.map((product) =>
@@ -34,36 +58,75 @@ export default function InventoryPage() {
     });
   }
 
+  function deleteProduct(id) {
+    const product = products.find(
+      (item) => item.id === id
+    );
+
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir o produto "${product?.name}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setProducts((currentProducts) =>
+      currentProducts.filter(
+        (product) => product.id !== id
+      )
+    );
+
+    setEditingStock((current) => {
+      const copy = { ...current };
+      delete copy[id];
+      return copy;
+    });
+
+    setStockTouched((current) => {
+      const copy = { ...current };
+      delete copy[id];
+      return copy;
+    });
+  }
+
   function getStatus(product) {
     if (product.stock === 0) {
       return {
         label: "Sem estoque",
-        className: "bg-red-50 text-red-700 border-red-200",
+        className:
+          "bg-red-50 text-red-700 border-red-200",
       };
     }
 
-    if (product.stock <= product.low_stock_threshold) {
+    if (
+      product.stock <= product.low_stock_threshold
+    ) {
       return {
         label: "Estoque baixo",
-        className: "bg-amber-50 text-amber-700 border-amber-200",
+        className:
+          "bg-amber-50 text-amber-700 border-amber-200",
       };
     }
 
     return {
       label: "Em estoque",
-      className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      className:
+        "bg-emerald-50 text-emerald-700 border-emerald-200",
     };
   }
 
   const totalStock = products.reduce(
-    (total, product) => total + product.stock,
+    (total, product) =>
+      total + product.stock,
     0
   );
 
   const lowStockCount = products.filter(
     (product) =>
       product.stock > 0 &&
-      product.stock <= product.low_stock_threshold
+      product.stock <=
+        product.low_stock_threshold
   ).length;
 
   const outOfStockCount = products.filter(
@@ -71,7 +134,9 @@ export default function InventoryPage() {
   ).length;
 
   const stockValue = products.reduce(
-    (total, product) => total + product.stock * product.price,
+    (total, product) =>
+      total +
+      product.stock * product.price,
     0
   );
 
@@ -93,6 +158,7 @@ export default function InventoryPage() {
         {/* INDICADORES */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
+          {/* TOTAL EM ESTOQUE */}
           <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm p-4">
             <div className="flex items-center gap-3">
 
@@ -116,6 +182,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
+          {/* ESTOQUE BAIXO */}
           <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm p-4">
             <div className="flex items-center gap-3">
 
@@ -139,6 +206,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
+          {/* SEM ESTOQUE */}
           <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm p-4">
             <div className="flex items-center gap-3">
 
@@ -162,6 +230,7 @@ export default function InventoryPage() {
             </div>
           </div>
 
+          {/* VALOR EM ESTOQUE */}
           <div className="bg-white rounded-xl border border-[#E4C7B7]/30 shadow-sm p-4">
             <div className="flex items-center gap-3">
 
@@ -226,10 +295,13 @@ export default function InventoryPage() {
               <tbody>
 
                 {products.map((product) => {
-                  const status = getStatus(product);
+                  const status =
+                    getStatus(product);
 
                   const isEditing =
-                    editingStock[product.id] !== undefined;
+                    editingStock[
+                      product.id
+                    ] !== undefined;
 
                   return (
                     <tr
@@ -284,12 +356,21 @@ export default function InventoryPage() {
                         {isEditing ? (
                           <input
                             type="number"
-                            value={editingStock[product.id]}
+                            min="0"
+                            value={
+                              editingStock[
+                                product.id
+                              ]
+                            }
                             onChange={(event) =>
-                              setEditingStock((current) => ({
-                                ...current,
-                                [product.id]: event.target.value,
-                              }))
+                              setEditingStock(
+                                (current) => ({
+                                  ...current,
+                                  [product.id]:
+                                    event.target
+                                      .value,
+                                })
+                              )
                             }
                             className="w-20 px-3 py-2 rounded-lg border border-[#E4C7B7]/40 text-sm focus:outline-none focus:border-[#8B645A]"
                           />
@@ -320,35 +401,41 @@ export default function InventoryPage() {
                       </td>
 
                       {/* AÇÕES */}
-                      <td className="px-5 py-4">
+<td className="px-5 py-4">
+  <div className="flex items-center gap-2">
 
-                        {isEditing ? (
-                          <button
-                            onClick={() =>
-                              saveStock(product.id)
-                            }
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#56443F] text-white text-xs font-semibold hover:bg-[#8B645A]"
-                          >
-                            <Save size={13} />
-                            Salvar
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              setEditingStock((current) => ({
-                                ...current,
-                                [product.id]: String(
-                                  product.stock
-                                ),
-                              }))
-                            }
-                            className="px-3 py-1.5 rounded-lg bg-[#E4C7B7]/30 text-[#56443F] text-xs font-semibold border border-[#E4C7B7]/40 hover:bg-[#E4C7B7]/50"
-                          >
-                            Ajustar
-                          </button>
-                        )}
+    {isEditing ? (
+      <button
+        onClick={() => saveStock(product.id)}
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#56443F] text-white text-xs font-semibold hover:bg-[#8B645A]"
+      >
+        <Save size={13} />
+        Salvar
+      </button>
+    ) : (
+      <button
+        onClick={() =>
+          setEditingStock((current) => ({
+            ...current,
+            [product.id]: String(product.stock),
+          }))
+        }
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#E4C7B7]/30 text-[#56443F] text-xs font-semibold border border-[#E4C7B7]/40 hover:bg-[#E4C7B7]/50"
+      >
+        Ajustar
+      </button>
+    )}
 
-                      </td>
+    <button
+      onClick={() => deleteProduct(product.id)}
+      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold border border-red-200 hover:bg-red-100"
+    >
+      <Trash2 size={13} />
+      Excluir
+    </button>
+
+  </div>
+</td>
 
                     </tr>
                   );

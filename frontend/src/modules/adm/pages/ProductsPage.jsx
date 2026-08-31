@@ -6,10 +6,16 @@ import {
   Search,
   X,
   Boxes,
+  Trash2,
 } from "lucide-react";
 
 import { productsMock } from "../mocks/productsMock";
 import AdminLayout from "../components/AdminLayout";
+import {
+  validateProdutoForm,
+  validatePriceChange,
+  validateEstoqueEntry,
+} from "../../../shared/validation/validation.js";
 
 const pricingGroups = [
   { id: "padrao", name: "Padrão", margin: 30 },
@@ -79,6 +85,15 @@ export default function ProductsPage() {
 
   const [stockProduct, setStockProduct] = useState(null);
   const [stockEntry, setStockEntry] = useState("");
+  const [stockForm, setStockForm] = useState({
+    supplier: "",
+    entryDate: "",
+    costValue: "",
+  });
+  const [productErrors, setProductErrors] = useState({});
+  const [priceError, setPriceError] = useState("");
+  const [stockErrors, setStockErrors] = useState({});
+  const [touchedFields, setTouchedFields] = useState({});
 
   const [inactiveProduct, setInactiveProduct] = useState(null);
   const [inactiveCategory, setInactiveCategory] = useState("");
@@ -133,6 +148,7 @@ export default function ProductsPage() {
   }
 
   function change(field, value) {
+    setTouchedFields((current) => ({ ...current, [field]: true }));
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -150,6 +166,33 @@ export default function ProductsPage() {
   const minimumPrice = calculatedPrice;
 
   function saveProduct() {
+    const errors = validateProdutoForm(form);
+    setProductErrors(errors);
+    setTouchedFields((current) => ({
+      ...current,
+      name: true,
+      subtitle: true,
+      collection: true,
+      aroma: true,
+      familia_olfativa: true,
+      size: true,
+      weight: true,
+      color: true,
+      recipiente: true,
+      cera: true,
+      description: true,
+      cost: true,
+      pricing_group: true,
+      price: true,
+      stock: true,
+      low_stock_threshold: true,
+      image: true,
+    }));
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     const productData = {
       ...form,
       price: calculatedPrice,
@@ -200,10 +243,15 @@ export default function ProductsPage() {
   }
 
   function savePrice() {
-    if (
-      Number(form.price) < minimumPrice &&
-      !priceAuthorization
-    ) {
+    const errors = validatePriceChange(
+      form.price,
+      minimumPrice,
+      priceAuthorization
+    );
+    setPriceError(errors.price || "");
+    setTouchedFields((current) => ({ ...current, price: true }));
+
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -223,6 +271,25 @@ export default function ProductsPage() {
 
   function saveStock() {
     const quantity = Number(stockEntry);
+    const validation = validateEstoqueEntry({
+      supplier: stockForm.supplier,
+      entryDate: stockForm.entryDate,
+      quantity,
+      costValue: stockForm.costValue,
+    });
+
+    setStockErrors(validation);
+    setTouchedFields((current) => ({
+      ...current,
+      stockFormSupplier: true,
+      stockFormEntryDate: true,
+      stockFormCostValue: true,
+      stockEntry: true,
+    }));
+
+    if (Object.keys(validation).length > 0) {
+      return;
+    }
 
     setProducts((current) =>
       current.map((product) =>
@@ -237,12 +304,25 @@ export default function ProductsPage() {
 
     setStockProduct(null);
     setStockEntry("");
+    setStockForm({ supplier: "", entryDate: "", costValue: "" });
+    setStockErrors({});
   }
 
   function openInactivation(product) {
     setInactiveProduct(product);
     setInactiveCategory("");
     setInactiveReason("");
+  }
+
+  function openStock(product) {
+    setStockProduct(product);
+    setStockEntry("");
+    setStockForm({
+      supplier: product.supplier || "",
+      entryDate: product.entryDate || "",
+      costValue: product.costValue ?? product.cost ?? "",
+    });
+    setStockErrors({});
   }
 
   function confirmInactivation() {
@@ -274,6 +354,19 @@ export default function ProductsPage() {
       )
     );
   }
+  function deleteProduct(product) {
+  const confirmed = window.confirm(
+    `Tem certeza que deseja excluir o produto "${product.name}"?`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setProducts((current) =>
+    current.filter((item) => item.id !== product.id)
+  );
+}
 
   return (
     <AdminLayout>
@@ -479,14 +572,19 @@ export default function ProductsPage() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setStockProduct(product);
-                            setStockEntry("");
-                          }}
+                          onClick={() => openStock(product)}
                           className="p-1.5 rounded-lg hover:bg-[#E4C7B7]/20"
                           title="Entrada de estoque"
                         >
                           <Boxes size={14} />
+                        </button>
+
+                        <button
+                          onClick={() => deleteProduct(product)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
+                          title="Excluir"
+                        >
+                          <Trash2 size={14} />
                         </button>
 
                         {product.is_active ? (
@@ -677,6 +775,8 @@ export default function ProductsPage() {
                       onChange={(value) =>
                         change("cost", value)
                       }
+                      error={touchedFields.cost && productErrors.cost}
+                      showError={!!touchedFields.cost}
                     />
 
                     <label>
@@ -770,6 +870,8 @@ export default function ProductsPage() {
                       type="number"
                       value={form.price}
                       onChange={updatePrice}
+                      error={priceError}
+                      showError={!!touchedFields.price}
                     />
 
                     {priceAuthorization && (
@@ -858,11 +960,66 @@ export default function ProductsPage() {
             </p>
 
             <Field
-              label="Quantidade recebida"
-              type="number"
-              value={stockEntry}
-              onChange={setStockEntry}
+              label="Fornecedor"
+              value={stockForm.supplier}
+              onChange={(value) => {
+                setTouchedFields((current) => ({ ...current, stockFormSupplier: true }));
+                setStockForm((current) => ({
+                  ...current,
+                  supplier: value,
+                }));
+              }}
+              error={stockErrors.supplier}
+              showError={!!touchedFields.stockFormSupplier}
             />
+
+            <div className="mt-4">
+              <Field
+                label="Data de entrada"
+                type="date"
+                value={stockForm.entryDate}
+                onChange={(value) => {
+                  setTouchedFields((current) => ({ ...current, stockFormEntryDate: true }));
+                  setStockForm((current) => ({
+                    ...current,
+                    entryDate: value,
+                  }));
+                }}
+                error={stockErrors.entryDate}
+                showError={!!touchedFields.stockFormEntryDate}
+              />
+            </div>
+
+            <div className="mt-4">
+              <Field
+                label="Custo unitário"
+                type="number"
+                value={stockForm.costValue}
+                onChange={(value) => {
+                  setTouchedFields((current) => ({ ...current, stockFormCostValue: true }));
+                  setStockForm((current) => ({
+                    ...current,
+                    costValue: value,
+                  }));
+                }}
+                error={stockErrors.costValue}
+                showError={!!touchedFields.stockFormCostValue}
+              />
+            </div>
+
+            <div className="mt-4">
+              <Field
+                label="Quantidade recebida"
+                type="number"
+                value={stockEntry}
+                onChange={(value) => {
+                  setTouchedFields((current) => ({ ...current, stockEntry: true }));
+                  setStockEntry(value);
+                }}
+                error={stockErrors.quantity}
+                showError={!!touchedFields.stockEntry}
+              />
+            </div>
 
             <ModalButtons
               onCancel={() => setStockProduct(null)}
@@ -937,6 +1094,8 @@ function Field({
   value,
   onChange,
   type = "text",
+  error,
+  showError = true,
 }) {
   return (
     <label className="block">
@@ -950,8 +1109,16 @@ function Field({
         onChange={(e) =>
           onChange(e.target.value)
         }
-        className="w-full px-3.5 py-2.5 rounded-lg border border-[#E4C7B7]/40 bg-white text-sm outline-none focus:border-[#8B645A]"
+        className={`w-full px-3.5 py-2.5 rounded-lg border bg-white text-sm outline-none focus:border-[#8B645A] ${
+          showError && error ? "border-red-300" : "border-[#E4C7B7]/40"
+        }`}
       />
+
+      {showError && error && (
+        <span className="block text-[11px] text-red-500 mt-1">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

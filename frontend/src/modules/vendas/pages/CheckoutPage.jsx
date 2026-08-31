@@ -5,11 +5,30 @@ import { ChevronLeft, Check } from "lucide-react";
 import { cartMock } from "../mocks/cartMock";
 import CheckoutForm from "../components/CheckoutForm";
 import OrderSummary from "../components/OrderSummary";
+import { validateCoupons } from "../../../shared/validation/validation.js";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [orderFinished, setOrderFinished] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState("PENDENTE");
+
+  const handleFinish = (paymentData = {}) => {
+    const couponErrors = validateCoupons(paymentData.selectedCoupons || []);
+    const operatorAccepted =
+      paymentData.operatorAccepted !== undefined
+        ? paymentData.operatorAccepted
+        : true;
+
+    if (Object.keys(couponErrors).length > 0 || !operatorAccepted) {
+      setPaymentStatus("REPROVADA");
+      setOrderFinished(true);
+      return;
+    }
+
+    setPaymentStatus("APROVADA");
+    setOrderFinished(true);
+  };
 
   if (orderFinished) {
   const subtotal = cartMock.reduce(
@@ -31,11 +50,15 @@ export default function CheckoutPage() {
         </div>
 
         <h1 className="font-serif text-3xl font-bold text-[#56443F]">
-          Pedido confirmado!
+          {paymentStatus === "APROVADA"
+            ? "Pedido confirmado!"
+            : "Pagamento não aprovado"}
         </h1>
 
         <p className="text-sm text-[#A28776] mt-3">
-          Obrigada pela sua compra. Seu pedido foi recebido com sucesso.
+          {paymentStatus === "APROVADA"
+            ? "Obrigada pela sua compra. Seu pedido foi recebido com sucesso."
+            : "O pedido foi reprovado pela validação da operadora ou por cupom inválido."}
         </p>
 
       </div>
@@ -166,7 +189,7 @@ export default function CheckoutPage() {
           <CheckoutForm
             step={step}
             setStep={setStep}
-            onFinish={() => setOrderFinished(true)}
+            onFinish={handleFinish}
           />
         </div>
 

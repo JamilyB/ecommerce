@@ -15,6 +15,14 @@ import {
   addressesMock,
   cardsMock,
 } from "../../cliente/mocks/clientMock";
+import { cartMock } from "../mocks/cartMock";
+import {
+  validateCartItem,
+  validateCoupons,
+  validateCardSplit,
+  validateCheckoutForm,
+} from "../../../shared/validation/validation.js";
+import { maskCEP } from "../../../shared/validation/masks.js";
 
 const couponsMock = [
   {
@@ -57,6 +65,11 @@ export default function CheckoutForm({
 
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
+  const [checkoutTouched, setCheckoutTouched] = useState({
+    address: false,
+    payment: false,
+  });
+  const [checkoutError, setCheckoutError] = useState("");
 
   const [newAddress, setNewAddress] = useState({
     residenceType: "",
@@ -71,9 +84,10 @@ export default function CheckoutForm({
   });
 
   const updateAddress = (field, value) => {
+    setCheckoutTouched((current) => ({ ...current, address: true }));
     setNewAddress((previous) => ({
       ...previous,
-      [field]: value,
+      [field]: field === "cep" ? maskCEP(value) : value,
     }));
   };
 
@@ -87,6 +101,7 @@ export default function CheckoutForm({
   // =====================================================
 
   const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [couponError, setCouponError] = useState("");
 
   // Agora podemos ter vários cupons.
   const [selectedCoupons, setSelectedCoupons] = useState([]);
@@ -98,10 +113,20 @@ export default function CheckoutForm({
       );
 
       if (alreadySelected) {
+        setCouponError("");
         return current.filter((item) => item.id !== coupon.id);
       }
 
-      return [...current, coupon];
+      const next = [...current, coupon];
+      const validation = validateCoupons(next);
+
+      if (validation.coupons) {
+        setCouponError(validation.coupons);
+        return current;
+      }
+
+      setCouponError("");
+      return next;
     });
   };
 
@@ -138,6 +163,7 @@ export default function CheckoutForm({
   });
 
   const togglePaymentMethod = (method) => {
+    setCheckoutTouched((current) => ({ ...current, payment: true }));
     setPaymentMethods((current) => ({
       ...current,
       [method]: !current[method],
@@ -145,6 +171,7 @@ export default function CheckoutForm({
   };
 
   const updatePaymentAmount = (method, value) => {
+    setCheckoutTouched((current) => ({ ...current, payment: true }));
     setPaymentAmounts((current) => ({
       ...current,
       [method]: value,
@@ -177,9 +204,10 @@ export default function CheckoutForm({
   });
 
   const updateCard = (field, value) => {
+    setCheckoutTouched((current) => ({ ...current, payment: true }));
     setNewCard((previous) => ({
       ...previous,
-      [field]: value,
+      [field]: field === "number" ? value.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ').trim() : field === "expiry" ? value.replace(/\D/g, '').slice(0,4).replace(/(\d{2})(?=\d)/g, '$1/') : field === "cvv" ? value.replace(/\D/g, '').slice(0,4) : value,
     }));
   };
 
@@ -209,10 +237,19 @@ export default function CheckoutForm({
   };
 
   const updateCardAmount = (cardId, value) => {
-    setCardAmounts((current) => ({
-      ...current,
+    const nextAmounts = {
+      ...cardAmounts,
       [cardId]: value,
-    }));
+    };
+
+    setCardAmounts(nextAmounts);
+    setCardSplitError(
+      validateCardSplit(
+        nextAmounts,
+        selectedCoupons.reduce((total, coupon) => total + Number(coupon.discount || 0), 0),
+        orderTotal
+      )
+    );
   };
 
 
@@ -225,13 +262,6 @@ export default function CheckoutForm({
     ) {
       return;
     }
-
-    /*
-     * Mock local.
-     *
-     * O cartão é adicionado à seleção atual.
-     * Não existe API/database neste protótipo.
-     */
 
     const generatedId = `new-card-${Date.now()}`;
 
@@ -287,11 +317,17 @@ export default function CheckoutForm({
   };
 
   const [temporaryCards, setTemporaryCards] = useState([]);
+  const [cardSplitError, setCardSplitError] = useState({});
 
   const allCards = [
     ...(cardsMock || []),
     ...temporaryCards,
   ];
+
+  const orderTotal = cartMock.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0
+  );
 
   // =====================================================
   // MODAL DE CUPONS
@@ -699,12 +735,32 @@ export default function CheckoutForm({
 
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={() => {
+              const validationError = validateCheckoutForm({
+                useNewAddress,
+                selectedAddress,
+                newAddress,
+              });
+
+              setCheckoutTouched((current) => ({ ...current, address: true }));
+
+              if (Object.keys(validationError).length > 0) {
+                setCheckoutError(validationError.selectedAddress || validationError.street || validationError.cep || 'Preencha o endereço de entrega.');
+                return;
+              }
+
+              setCheckoutError("");
+              setStep(2);
+            }}
             className="w-full bg-[#56443F] hover:bg-[#8B645A] text-white py-3.5 rounded-lg text-xs font-bold uppercase flex items-center justify-center gap-2"
           >
             Ir para o pagamento
             <ArrowRight size={14} />
           </button>
+
+          {checkoutTouched.address && checkoutError && (
+            <p className="text-[11px] text-red-500 mt-2">{checkoutError}</p>
+          )}
 
         </div>
       )}
@@ -764,6 +820,10 @@ export default function CheckoutForm({
               </button>
 
             </div>
+
+            {couponError && (
+              <p className="text-[11px] text-red-500 mt-2">{couponError}</p>
+            )}
 
             {selectedCoupons.length > 0 && (
               <div className="mt-3 space-y-2">
@@ -1062,6 +1122,12 @@ export default function CheckoutForm({
 
                             </div>
 
+                            {cardSplitError[card.id] && (
+                              <p className="text-[11px] text-red-500 mt-2">
+                                {cardSplitError[card.id]}
+                              </p>
+                            )}
+
                           </div>
                         )}
 
@@ -1315,12 +1381,62 @@ export default function CheckoutForm({
 
           <button
             type="button"
-            onClick={onFinish}
+            onClick={() => {
+              const couponValidation = validateCoupons(selectedCoupons);
+              const splitValidation = validateCardSplit(
+                cardAmounts,
+                selectedCoupons.reduce(
+                  (total, coupon) => total + Number(coupon.discount || 0),
+                  0
+                ),
+                orderTotal
+              );
+
+              const paymentValidation = validateCheckoutForm({
+                useNewAddress,
+                selectedAddress,
+                newAddress,
+                paymentMethods,
+                cardAmounts,
+                selectedCards,
+                paymentAmounts,
+              });
+
+              if (couponValidation.coupons) {
+                setCouponError(couponValidation.coupons);
+                return;
+              }
+
+              if (Object.keys(splitValidation).length > 0) {
+                setCardSplitError(splitValidation);
+                return;
+              }
+
+              if (Object.keys(paymentValidation).length > 0) {
+                setCheckoutTouched((current) => ({ ...current, payment: true }));
+                setCheckoutError(paymentValidation.paymentTotal || paymentValidation.cardSelection || paymentValidation.selectedAddress || 'Preencha os dados de pagamento.');
+                return;
+              }
+
+              setCheckoutError("");
+
+              onFinish({
+                selectedCoupons,
+                cardAmounts,
+                paymentMethods,
+                selectedCards,
+                operatorAccepted: paymentMethods.card && selectedCards.length > 0,
+              });
+            }}
             className="w-full bg-[#56443F] hover:bg-[#8B645A] text-white py-3.5 rounded-lg text-xs font-bold uppercase flex items-center justify-center gap-2"
           >
             <Check size={14} />
             Confirmar pedido
           </button>
+
+          {checkoutTouched.payment && checkoutError && (
+            <p className="text-[11px] text-red-500 mt-2">{checkoutError}</p>
+          )}
 
         </div>
       )}

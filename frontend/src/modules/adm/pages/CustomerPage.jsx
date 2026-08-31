@@ -15,6 +15,11 @@ import {
 
 import { customersMock } from "../mocks/customersMock";
 import AdminLayout from "../components/AdminLayout";
+import {
+  validateClienteForm,
+  validateEnderecoForm,
+  validateCartaoForm,
+} from "../../../shared/validation/validation.js";
 
 const statusConfig = {
   active: {
@@ -127,6 +132,11 @@ export default function CustomerPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [activeSection, setActiveSection] = useState("dados");
+  const [customerErrors, setCustomerErrors] = useState({
+    personal: {},
+    addresses: [],
+    card: {},
+  });
 
   /* =========================================================
      CONTROLE DO CARTÃO NO NOVO CLIENTE
@@ -467,6 +477,58 @@ export default function CustomerPage() {
   const saveCustomer = () => {
     if (!form) return;
 
+    const personalErrors = validateClienteForm({
+      gender: form.gender,
+      fullName: form.full_name,
+      email: form.email,
+      phoneType: form.phone?.type,
+      phoneDDD: form.phone?.ddd,
+      phoneNumber: form.phone?.number,
+      cpf: form.cpf,
+      birthDate: form.birth_date,
+      password: form.password || "",
+      confirmPassword: form.password_confirmation || "",
+    });
+
+    const addressErrors = (form.addresses || []).map((address) =>
+      validateEnderecoForm({
+        residenceType: address.residence_type,
+        streetType: address.street_type,
+        street: address.street,
+        number: address.number,
+        neighborhood: address.neighborhood,
+        cep: address.cep,
+        city: address.city,
+        state: address.state,
+        country: address.country,
+      })
+    );
+
+    const cardErrors =
+      form.cards && form.cards.length > 0
+        ? validateCartaoForm({
+            cardNumber: form.cards[0].number,
+            holderName: form.cards[0].name,
+            brand: form.cards[0].brand,
+            cvv: form.cards[0].security_code,
+          })
+        : {};
+
+    const hasErrors =
+      Object.keys(personalErrors).length > 0 ||
+      addressErrors.some((errors) => Object.keys(errors).length > 0) ||
+      Object.keys(cardErrors).length > 0;
+
+    setCustomerErrors({
+      personal: personalErrors,
+      addresses: addressErrors,
+      card: cardErrors,
+    });
+
+    if (hasErrors) {
+      return;
+    }
+
     if (showForm) {
       const newCustomer = {
         ...form,
@@ -496,6 +558,7 @@ export default function CustomerPage() {
       setActiveSection("dados");
       setEditingAddressId(null);
       setEditingCardId(null);
+      setCustomerErrors({ personal: {}, addresses: [], card: {} });
 
       return;
     }
@@ -517,6 +580,7 @@ export default function CustomerPage() {
 
     setSelectedCustomer(updatedCustomer);
     setForm(updatedCustomer);
+    setCustomerErrors({ personal: {}, addresses: [], card: {} });
   };
 
   /* =========================================================
@@ -933,8 +997,14 @@ export default function CustomerPage() {
                               e.target.value
                             )
                           }
-                          className={inputClass}
+                          className={`${inputClass} ${customerErrors.personal.gender ? "border-red-300" : ""}`}
                         />
+
+                        {customerErrors.personal.gender && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {customerErrors.personal.gender}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -950,8 +1020,14 @@ export default function CustomerPage() {
                               e.target.value
                             )
                           }
-                          className={inputClass}
+                          className={`${inputClass} ${customerErrors.personal.fullName ? "border-red-300" : ""}`}
                         />
+
+                        {customerErrors.personal.fullName && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {customerErrors.personal.fullName}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -968,8 +1044,14 @@ export default function CustomerPage() {
                               e.target.value
                             )
                           }
-                          className={inputClass}
+                          className={`${inputClass} ${customerErrors.personal.birthDate ? "border-red-300" : ""}`}
                         />
+
+                        {customerErrors.personal.birthDate && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {customerErrors.personal.birthDate}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -985,8 +1067,14 @@ export default function CustomerPage() {
                               e.target.value
                             )
                           }
-                          className={inputClass}
+                          className={`${inputClass} ${customerErrors.personal.cpf ? "border-red-300" : ""}`}
                         />
+
+                        {customerErrors.personal.cpf && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {customerErrors.personal.cpf}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -1002,8 +1090,14 @@ export default function CustomerPage() {
                               e.target.value
                             )
                           }
-                          className={inputClass}
+                          className={`${inputClass} ${customerErrors.personal.email ? "border-red-300" : ""}`}
                         />
+
+                        {customerErrors.personal.email && (
+                          <p className="text-[11px] text-red-500 mt-1">
+                            {customerErrors.personal.email}
+                          </p>
+                        )}
                       </div>
 
                       {/* TELEFONE */}
@@ -1079,8 +1173,14 @@ export default function CustomerPage() {
                                 onChange={(e) =>
                                   updateField("password", e.target.value)
                                 }
-                                className={inputClass}
+                                className={`${inputClass} ${customerErrors.personal.password ? "border-red-300" : ""}`}
                               />
+
+                              {customerErrors.personal.password && (
+                                <p className="text-[11px] text-red-500 mt-1">
+                                  {customerErrors.personal.password}
+                                </p>
+                              )}
                             </div>
 
                             {/* Confirmar senha */}
@@ -1100,8 +1200,14 @@ export default function CustomerPage() {
                                     e.target.value
                                   )
                                 }
-                                className={inputClass}
+                                className={`${inputClass} ${customerErrors.personal.confirmPassword ? "border-red-300" : ""}`}
                               />
+
+                              {customerErrors.personal.confirmPassword && (
+                                <p className="text-[11px] text-red-500 mt-1">
+                                  {customerErrors.personal.confirmPassword}
+                                </p>
+                              )}
                             </div>
 
                           </div>

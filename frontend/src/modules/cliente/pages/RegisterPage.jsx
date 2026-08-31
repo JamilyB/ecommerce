@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { Plus, Trash2, CreditCard, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+import {
+  validateClienteForm,
+  validateEnderecoForm,
+  validateCartaoForm,
+} from '../../../shared/validation/validation.js';
 import PersonalDataForm from '../components/PersonalDataForm';
 import AddressForm from '../components/AddressForm';
 import CardForm from '../components/CardForm';
-
 
 const createEmptyAddress = () => ({
   id: Date.now(),
@@ -40,9 +44,7 @@ const RegisterPage = () => {
     confirmPassword: '',
   });
 
-  const [addresses, setAddresses] = useState([
-    createEmptyAddress(),
-  ]);
+  const [addresses, setAddresses] = useState([createEmptyAddress()]);
 
   const [card, setCard] = useState({
     cardNumber: '',
@@ -54,36 +56,71 @@ const RegisterPage = () => {
 
   const [addCard, setAddCard] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [formErrors, setFormErrors] = useState({
+    personal: {},
+    addresses: [],
+    card: {},
+  });
+  const [touched, setTouched] = useState({
+    personal: {},
+    addresses: [],
+    card: {},
+  });
 
   const addAddress = () => {
     if (addresses.length >= 2) return;
-
-    setAddresses((prev) => [
-      ...prev,
-      createEmptyAddress(),
-    ]);
+    setAddresses((prev) => [...prev, createEmptyAddress()]);
   };
 
   const removeAddress = (id) => {
     if (addresses.length === 1) return;
-
-    setAddresses((prev) =>
-      prev.filter((address) => address.id !== id)
-    );
+    setAddresses((prev) => prev.filter((address) => address.id !== id));
   };
 
   const updateAddress = (id, updatedAddress) => {
     setAddresses((prev) =>
-      prev.map((address) =>
-        address.id === id
-          ? updatedAddress
-          : address
-      )
+      prev.map((address) => (address.id === id ? updatedAddress : address))
     );
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const personalErrors = validateClienteForm(personalData);
+    const addressErrors = addresses.map((address) => validateEnderecoForm(address));
+    const cardErrors = addCard ? validateCartaoForm(card) : {};
+
+    setTouched({
+      personal: Object.keys(personalData).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+      addresses: addresses.map(() => ({
+        label: true,
+        residenceType: true,
+        streetType: true,
+        street: true,
+        number: true,
+        neighborhood: true,
+        cep: true,
+        city: true,
+        state: true,
+        country: true,
+      })),
+      card: Object.keys(card).reduce((acc, key) => ({ ...acc, [key]: true }), {}),
+    });
+
+    const hasErrors =
+      Object.keys(personalErrors).length > 0 ||
+      addressErrors.some((errors) => Object.keys(errors).length > 0) ||
+      Object.keys(cardErrors).length > 0;
+
+    setFormErrors({
+      personal: personalErrors,
+      addresses: addressErrors,
+      card: cardErrors,
+    });
+
+    if (hasErrors) {
+      return;
+    }
 
     setShowSuccessMessage(true);
 
@@ -123,6 +160,17 @@ const RegisterPage = () => {
             <PersonalDataForm
               form={personalData}
               setForm={setPersonalData}
+              errors={formErrors.personal}
+              touched={touched.personal}
+              setTouched={(updater) =>
+                setTouched((prev) => ({
+                  ...prev,
+                  personal:
+                    typeof updater === "function"
+                      ? updater(prev.personal || {})
+                      : updater,
+                }))
+              }
             />
 
           </div>
@@ -165,6 +213,15 @@ const RegisterPage = () => {
                       address.id,
                       updatedAddress
                     )
+                  }
+                  errors={formErrors.addresses[index] || {}}
+                  touched={touched.addresses[index] || {}}
+                  setTouched={(updater) =>
+                    setTouched((prev) => {
+                      const nextAddresses = [...(prev.addresses || [])];
+                      nextAddresses[index] = typeof updater === 'function' ? updater(nextAddresses[index] || {}) : updater;
+                      return { ...prev, addresses: nextAddresses };
+                    })
                   }
                 />
 
@@ -236,6 +293,17 @@ const RegisterPage = () => {
               <CardForm
                 form={card}
                 setForm={setCard}
+                errors={formErrors.card}
+                touched={touched.card}
+                setTouched={(updater) =>
+                  setTouched((prev) => ({
+                    ...prev,
+                    card:
+                      typeof updater === "function"
+                        ? updater(prev.card || {})
+                        : updater,
+                  }))
+                }
               />
 
             </div>

@@ -1,0 +1,48 @@
+const onlyDigits = (value = '') => String(value ?? '').replace(/\D/g, '').slice(0, 999);
+
+export function maskCPF(value = '') {
+  const digits = onlyDigits(value).slice(0, 11);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+export function maskCEP(value = '') {
+  const digits = onlyDigits(value).slice(0, 8);
+
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+export function maskPhone(value = '', mode = 'number') {
+  const digits = onlyDigits(value).slice(0, mode === 'ddd' ? 2 : 9);
+
+  if (mode === 'ddd') return digits;
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 8) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+export function maskCardNumber(value = '') {
+  const digits = onlyDigits(value).slice(0, 16);
+
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+
+  return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12)}`;
+}
+
+export function maskExpiry(value = '') {
+  const digits = onlyDigits(value).slice(0, 4);
+
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
+export function maskCVV(value = '') {
+  return onlyDigits(value).slice(0, 4);
+}
