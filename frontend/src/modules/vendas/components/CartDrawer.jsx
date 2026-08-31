@@ -95,10 +95,6 @@ export default function CartDrawer({
 
             <div className="h-full flex flex-col items-center justify-center text-center space-y-2">
 
-              <span className="text-3xl">
-                🍓🍂
-              </span>
-
               <p className="text-xs text-[#A28776] font-semibold">
                 Sua sacola está vazia.
               </p>

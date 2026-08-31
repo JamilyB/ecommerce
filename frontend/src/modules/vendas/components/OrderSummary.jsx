@@ -55,27 +55,6 @@ export default function OrderSummary({ cart }) {
 
       </div>
 
-      {/* Cupom */}
-      <div className="border-t border-[#E4C7B7]/20 pt-4">
-
-        <label className="text-[9px] uppercase font-bold text-[#8B645A]">
-          Cupom de desconto
-        </label>
-
-        <div className="flex gap-2 mt-2">
-
-          <input
-            placeholder="Ex: ACONCHEGO"
-            className="flex-1 bg-[#FAF9F5] border border-[#E4C7B7]/30 rounded-lg px-3 py-2 text-xs"
-          />
-
-          <button className="bg-[#56443F] text-white px-4 rounded-lg text-[10px] font-bold uppercase">
-            Aplicar
-          </button>
-
-        </div>
-
-      </div>
 
       {/* Totais */}
       <div className="border-t border-[#E4C7B7]/20 pt-4 space-y-2 text-xs">

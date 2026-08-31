@@ -16,6 +16,8 @@ export default function OrdersPage() {
     orderId: null,
   });
 
+  const [returnReason, setReturnReason] = useState("");
+
   const getStatus = (status) => {
     switch (status) {
       case "confirmed":
@@ -53,6 +55,13 @@ export default function OrdersPage() {
             "bg-red-50 text-red-700 border border-red-200",
         };
 
+      case "return_requested":
+        return {
+          label: "Troca solicitada",
+          className:
+            "bg-amber-50 text-amber-700 border border-amber-200",
+        };
+
       case "pending":
         return {
           label: "Pendente",
@@ -75,6 +84,8 @@ export default function OrdersPage() {
   };
 
   const openConfirmation = (type, orderId) => {
+    setReturnReason("");
+
     setConfirmation({
       open: true,
       type,
@@ -88,6 +99,8 @@ export default function OrdersPage() {
       type: null,
       orderId: null,
     });
+
+    setReturnReason("");
   };
 
   const confirmAction = () => {
@@ -102,7 +115,13 @@ export default function OrdersPage() {
           status:
             confirmation.type === "cancel"
               ? "cancelled"
-              : "delivered",
+              : confirmation.type === "receive"
+              ? "delivered"
+              : "return_requested",
+          return_reason:
+            confirmation.type === "return"
+              ? returnReason
+              : order.return_reason,
         };
       })
     );
@@ -226,7 +245,8 @@ export default function OrdersPage() {
                   {/* CANCELAR PEDIDO */}
 
                   {order.status !== "delivered" &&
-                    order.status !== "cancelled" && (
+                    order.status !== "cancelled" &&
+                    order.status !== "return_requested" && (
                       <button
                         type="button"
                         onClick={() =>
@@ -263,6 +283,12 @@ export default function OrdersPage() {
                   {order.status === "delivered" && (
                     <button
                       type="button"
+                      onClick={() =>
+                        openConfirmation(
+                          "return",
+                          order.id
+                        )
+                      }
                       className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-[#E4C7B7]/15 text-[#8B645A] border border-[#E4C7B7] rounded-lg text-[11px] font-bold uppercase tracking-wider transition-colors"
                     >
                       Solicitar Devolução
@@ -302,69 +328,164 @@ export default function OrdersPage() {
 
             </div>
 
-            {/* Conteúdo */}
+            {/* DEVOLUÇÃO */}
 
-            <div className="text-center space-y-3">
+            {confirmation.type === "return" ? (
+              <>
+                <div className="text-center space-y-3">
 
-              <div className="w-12 h-12 mx-auto rounded-full bg-[#E4C7B7]/20 flex items-center justify-center">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[#E4C7B7]/20 flex items-center justify-center">
 
-                {confirmation.type === "cancel" ? (
-                  <X
-                    size={20}
-                    className="text-red-500"
-                  />
-                ) : (
-                  <Check
-                    size={20}
-                    className="text-[#8B645A]"
-                  />
-                )}
+                    <Package
+                      size={20}
+                      className="text-[#8B645A]"
+                    />
 
-              </div>
+                  </div>
 
-              <h3 className="font-serif text-xl font-semibold text-[#56443F]">
+                  <h3 className="font-serif text-xl font-semibold text-[#56443F]">
+                    Solicitar devolução
+                  </h3>
 
-                {confirmation.type === "cancel"
-                  ? "Cancelar pedido?"
-                  : "Confirmar recebimento?"}
+                  <p className="text-xs text-[#A28776]">
+                    Selecione o motivo da devolução para enviar sua solicitação.
+                  </p>
 
-              </h3>
+                </div>
 
-              <p className="text-xs text-[#A28776]">
+                <div className="mt-5 space-y-2">
 
-                {confirmation.type === "cancel"
-                  ? "Tem certeza que deseja cancelar este pedido? Essa ação não poderá ser desfeita."
-                  : "Confirma que você recebeu este pedido? O pedido será marcado como entregue."}
+                  <label className="text-[10px] uppercase font-bold text-[#8B645A]">
+                    Motivo da devolução
+                  </label>
 
-              </p>
+                  <select
+                    value={returnReason}
+                    onChange={(e) =>
+                      setReturnReason(e.target.value)
+                    }
+                    className="w-full border border-[#E4C7B7] rounded-lg p-3 text-xs bg-white text-[#56443F]"
+                  >
+                    <option value="">
+                      Selecione um motivo
+                    </option>
 
-            </div>
+                    <option value="Produto com defeito">
+                      Produto com defeito
+                    </option>
 
-            {/* Ações */}
+                    <option value="Produto danificado">
+                      Produto danificado
+                    </option>
 
-            <div className="flex gap-3 mt-6">
+                    <option value="Produto diferente do pedido">
+                      Produto diferente do pedido
+                    </option>
 
-              <button
-                type="button"
-                onClick={closeConfirmation}
-                className="flex-1 py-3 border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase text-[#8B645A] hover:bg-[#E4C7B7]/10"
-              >
-                Voltar
-              </button>
+                    <option value="Produto não atendeu às expectativas">
+                      Produto não atendeu às expectativas
+                    </option>
 
-              <button
-                type="button"
-                onClick={confirmAction}
-                className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase text-white ${
-                  confirmation.type === "cancel"
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-[#56443F] hover:bg-[#8B645A]"
-                }`}
-              >
-                Confirmar
-              </button>
+                    <option value="Desisti da compra">
+                      Desisti da compra
+                    </option>
 
-            </div>
+                    <option value="Outro">
+                      Outro
+                    </option>
+
+                  </select>
+
+                </div>
+
+                <div className="flex gap-3 mt-6">
+
+                  <button
+                    type="button"
+                    onClick={closeConfirmation}
+                    className="flex-1 py-3 border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase text-[#8B645A] hover:bg-[#E4C7B7]/10"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={!returnReason}
+                    onClick={confirmAction}
+                    className="flex-1 py-3 rounded-lg text-xs font-bold uppercase text-white bg-[#56443F] hover:bg-[#8B645A] disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Solicitar
+                  </button>
+
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Conteúdo */}
+
+                <div className="text-center space-y-3">
+
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[#E4C7B7]/20 flex items-center justify-center">
+
+                    {confirmation.type === "cancel" ? (
+                      <X
+                        size={20}
+                        className="text-red-500"
+                      />
+                    ) : (
+                      <Check
+                        size={20}
+                        className="text-[#8B645A]"
+                      />
+                    )}
+
+                  </div>
+
+                  <h3 className="font-serif text-xl font-semibold text-[#56443F]">
+
+                    {confirmation.type === "cancel"
+                      ? "Cancelar pedido?"
+                      : "Confirmar recebimento?"}
+
+                  </h3>
+
+                  <p className="text-xs text-[#A28776]">
+
+                    {confirmation.type === "cancel"
+                      ? "Tem certeza que deseja cancelar este pedido? Essa ação não poderá ser desfeita."
+                      : "Confirma que você recebeu este pedido? O pedido será marcado como entregue."}
+
+                  </p>
+
+                </div>
+
+                {/* Ações */}
+
+                <div className="flex gap-3 mt-6">
+
+                  <button
+                    type="button"
+                    onClick={closeConfirmation}
+                    className="flex-1 py-3 border border-[#E4C7B7] rounded-lg text-xs font-bold uppercase text-[#8B645A] hover:bg-[#E4C7B7]/10"
+                  >
+                    Voltar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={confirmAction}
+                    className={`flex-1 py-3 rounded-lg text-xs font-bold uppercase text-white ${
+                      confirmation.type === "cancel"
+                        ? "bg-red-600 hover:bg-red-700"
+                        : "bg-[#56443F] hover:bg-[#8B645A]"
+                    }`}
+                  >
+                    Confirmar
+                  </button>
+
+                </div>
+              </>
+            )}
 
           </div>
 
@@ -374,3 +495,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+

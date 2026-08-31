@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Check } from "lucide-react";
 
 import { cartMock } from "../mocks/cartMock";
@@ -6,6 +7,7 @@ import CheckoutForm from "../components/CheckoutForm";
 import OrderSummary from "../components/OrderSummary";
 
 export default function CheckoutPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [orderFinished, setOrderFinished] = useState(false);
 
@@ -106,10 +108,7 @@ export default function CheckoutPage() {
 
       <div className="text-center">
         <button
-          onClick={() => {
-            setOrderFinished(false);
-            setStep(1);
-          }}
+          onClick={() => navigate("/catalogo")}
           className="mt-8 bg-[#56443F] text-white px-6 py-3 rounded-lg text-xs font-bold uppercase"
         >
           Voltar para a loja

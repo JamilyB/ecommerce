@@ -25,6 +25,8 @@ const createEmptyAddress = () => ({
 });
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
+
   const [personalData, setPersonalData] = useState({
     gender: '',
     fullName: '',
@@ -51,6 +53,7 @@ const RegisterPage = () => {
   });
 
   const [addCard, setAddCard] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const addAddress = () => {
     if (addresses.length >= 2) return;
@@ -80,16 +83,14 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  console.log({
-    personalData,
-    addresses,
-    card: addCard ? card : null,
-  });
+    setShowSuccessMessage(true);
 
-  navigate('/catalogo');
-};
+    window.setTimeout(() => {
+      navigate('/catalogo');
+    }, 1200);
+  };
 
   return (
     <div className="animate-fade-in max-w-5xl mx-auto px-6 py-12">
@@ -246,13 +247,19 @@ const RegisterPage = () => {
         {/* BOTÃO */}
         <div className="max-w-md mx-auto pt-2">
 
-          <button
-            type="submit"
-            className="w-full px-4 py-3 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
-          >
-            <Check size={15} />
-            Criar minha conta
-          </button>
+          {showSuccessMessage ? (
+            <div className="rounded-xl border border-[#A7D7C5] bg-[#EAF8F1] px-4 py-3 text-sm font-medium text-[#2E6B52] text-center">
+              Conta criada com sucesso! Redirecionando para o catálogo...
+            </div>
+          ) : (
+            <button
+              type="submit"
+              className="w-full px-4 py-3 bg-[#56443F] hover:bg-[#8B645A] text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+            >
+              <Check size={15} />
+              Criar minha conta
+            </button>
+          )}
 
           <p className="text-[10px] text-[#A28776] font-semibold text-center mt-3">
             Ao criar sua conta, você concorda com os termos de uso da JARMIN VELAS.

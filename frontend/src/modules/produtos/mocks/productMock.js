@@ -1,8 +1,8 @@
 export const productMock = [
   {
     id: "relaxar-01",
-    name: "Lavender & Eucalyptus Premium",
-    subtitle: "Lavanda calmante, eucalipto fresco e folha de canela",
+    name: "Lavanda & Eucalipto",
+    subtitle: "Lavanda, eucalipto e notas suaves de canela",
     price: 112.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -33,8 +33,8 @@ export const productMock = [
 
   {
     id: "relaxar-02",
-    name: "Camomila Serena",
-    subtitle: "Chá de camomila morno e toque de mel silvestre",
+    name: "Camomila & Mel",
+    subtitle: "Camomila, mel e um toque delicado de jasmim",
     price: 88.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -65,8 +65,8 @@ export const productMock = [
 
   {
     id: "cafe-02",
-    name: "Cappuccino Trufado",
-    subtitle: "Café expresso forte, calda de chocolate e canela",
+    name: "Café & Canela",
+    subtitle: "Café torrado, chocolate e um toque de canela",
     price: 96.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -97,8 +97,8 @@ export const productMock = [
 
   {
     id: "cafe-03",
-    name: "Baunilha Cremosa",
-    subtitle: "Flor de baunilha doce e fava tostada",
+    name: "Baunilha & Fava Tonka",
+    subtitle: "Baunilha cremosa, fava tonka e açúcar mascavo",
     price: 86.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -129,8 +129,8 @@ export const productMock = [
 
   {
     id: "natureza-03",
-    name: "Cedro Nobre",
-    subtitle: "Madeira de cedro, musgo de carvalho e âmbar",
+    name: "Cedro & Sândalo",
+    subtitle: "Cedro, sândalo, musgo e notas quentes de âmbar",
     price: 98.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -161,8 +161,8 @@ export const productMock = [
 
   {
     id: "gourmet-01",
-    name: "Raspberry",
-    subtitle: "Framboesa fresca, creme batido e cera em gel",
+    name: "Framboesa & Baunilha",
+    subtitle: "Framboesa, baunilha e creme com toque adocicado",
     price: 98.00,
     image:
       "https://res.cloudinary.com/pjzckky0/image/upload/v1783520226/Vela_VANILLA_skjxwu.jpg",
@@ -192,3 +192,4 @@ export const productMock = [
   },
 
 ];
+

@@ -41,12 +41,22 @@ export const ProfilePage = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [showCardForm, setShowCardForm] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [pendingAccountAction, setPendingAccountAction] = useState(null);
+  const [accountInactive, setAccountInactive] = useState(false);
+
+  const handleAccountAction = () => {
+    const shouldDeactivate = pendingAccountAction === 'deactivate';
+    setAccountInactive(shouldDeactivate);
+    setShowDeactivateConfirm(false);
+    setPendingAccountAction(null);
+  };
 
   return (
     <div className="animate-fade-in max-w-4xl mx-auto px-6 py-16 text-left space-y-10">
 
       {/* Header */}
-      <div className="text-center space-y-3">
+      <div className="text-center space-y-1">
         <span className="text-xs font-bold tracking-widest text-[#8B645A] uppercase">
           Sua Conta
         </span>
@@ -54,10 +64,6 @@ export const ProfilePage = () => {
         <h2 className="font-serif text-3xl font-semibold text-[#56443F]">
           Perfil & Configurações
         </h2>
-
-        <p className="text-xs text-[#A28776] font-semibold">
-          Gerencie seus dados, endereços e cartões.
-        </p>
       </div>
 
       {/* Avatar + Summary */}
@@ -77,7 +83,7 @@ export const ProfilePage = () => {
 
           <div className="flex gap-1.5 mt-1.5">
             <span className="text-[9px] bg-[#E4C7B7]/30 text-[#8B645A] px-2 py-0.5 rounded-sm font-bold uppercase tracking-wide">
-              Cliente SURU
+              Cliente
             </span>
           </div>
         </div>
@@ -115,13 +121,26 @@ export const ProfilePage = () => {
                 editing={editingProfile}
                 setEditing={setEditingProfile}
               />
-          
+
+              <div
+                className={`mt-4 rounded-xl border px-4 py-3 text-sm font-medium ${
+                  accountInactive
+                    ? 'border-[#F1C7C7] bg-[#FDF2F2] text-[#A63C3C]'
+                    : 'border-[#A7D7C5] bg-[#EAF8F1] text-[#2E6B52]'
+                }`}
+              >
+                {accountInactive ? 'Sua conta está inativada.' : 'Sua conta está ativa.'}
+              </div>
+
               <button
                 type="button"
-                onClick={() => alert("Conta inativada com sucesso.")}
-                className="w-full mt-4 py-3 border border-[#E4C7B7]/40 rounded-lg text-xs font-bold text-[#8B645A] hover:bg-[#E4C7B7]/10"
+                onClick={() => {
+                  setPendingAccountAction(accountInactive ? 'activate' : 'deactivate');
+                  setShowDeactivateConfirm(true);
+                }}
+                className="w-full mt-4 py-3 border border-[#E4C7B7]/40 rounded-lg text-xs font-bold text-[#56443F] hover:bg-[#E4C7B7]/10 transition-all"
               >
-                Inativar minha conta
+                {accountInactive ? 'Ativar minha conta' : 'Inativar minha conta'}
               </button>
             </>
           )}
@@ -145,6 +164,49 @@ export const ProfilePage = () => {
         )}
 
       </div>
+
+      {showDeactivateConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#56443F]/45 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-[#E4C7B7]/40">
+            <h3 className="font-serif text-2xl text-[#56443F] mb-2">
+              {pendingAccountAction === 'deactivate'
+                ? 'Confirmar inativação'
+                : 'Confirmar ativação'}
+            </h3>
+
+            <p className="text-sm text-[#A28776] mb-6">
+              {pendingAccountAction === 'deactivate'
+                ? 'Sua conta será inativada e você poderá ativá-la novamente depois.'
+                : 'Sua conta será reativada e poderá voltar a usar todos os serviços normalmente.'}
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeactivateConfirm(false);
+                  setPendingAccountAction(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-[#E4C7B7]/50 text-xs font-bold text-[#56443F] hover:bg-[#E4C7B7]/10"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAccountAction}
+                className={`px-4 py-2 rounded-lg text-xs font-bold ${
+                  pendingAccountAction === 'deactivate'
+                    ? 'bg-[#8B645A] text-white hover:bg-[#724E46]'
+                    : 'bg-[#2F7D4A] text-white hover:bg-[#23663B]'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

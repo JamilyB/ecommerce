@@ -11,7 +11,7 @@ export const ordersMock = [
     discount: 0,
     payment_method: "Pix",
     payment_status: "paid",
-    status: "delivered",
+    status: "shipped",
 
     shipping_address: {
       street: "Rua das Flores, 120",
@@ -52,7 +52,7 @@ export const ordersMock = [
     discount: 0,
     payment_method: "Cartão de Crédito",
     payment_status: "paid",
-    status: "delivered",
+    status: "shipped",
 
     shipping_address: {
       street: "Av. Paulista, 850",
@@ -85,7 +85,7 @@ export const ordersMock = [
     discount: 0,
     payment_method: "Pix",
     payment_status: "paid",
-    status: "shipped",
+    status: "delivered",
 
     shipping_address: {
       street: "Rua das Palmeiras, 45",

@@ -26,15 +26,16 @@ const navGroups = [
     ],
   },
   {
-    label: 'Catálogo',
-      {
-        page: 'inventory',
-        label: 'Estoque',
-        icon: Boxes,
-        path: '/produtos',
-      },
-    ],
-  },
+  label: 'Catálogo',
+  items: [
+    {
+      page: 'inventory',
+      label: 'Estoque',
+      icon: Boxes,
+      path: '/produtos',
+    },
+  ],
+},
   {
     label: 'Vendas',
     items: [

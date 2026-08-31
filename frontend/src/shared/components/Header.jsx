@@ -131,14 +131,6 @@ export default function Header() {
                     Meu Perfil
                   </button>
 
-                  <button
-                    onClick={() => handleNavigation("/cadastrar")}
-                    className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-[#E4C7B7]/25 text-[#56443F] transition-colors flex items-center gap-2"
-                  >
-                    <User size={14} />
-                    Cadastrar
-                  </button>
-
                 </div>
               )}
             </div>

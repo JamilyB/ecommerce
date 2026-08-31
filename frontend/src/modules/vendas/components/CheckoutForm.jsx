@@ -16,7 +16,6 @@ import {
   cardsMock,
 } from "../../cliente/mocks/clientMock";
 
-// Mock temporário de cupons
 const couponsMock = [
   {
     id: 1,
@@ -46,23 +45,9 @@ export default function CheckoutForm({
   setStep,
   onFinish,
 }) {
-  const [paymentMethod, setPaymentMethod] = useState("card");
-
-  // =========================
-  // CUPOM
-  // =========================
-
-  const [couponModalOpen, setCouponModalOpen] = useState(false);
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-
-  const selectCoupon = (coupon) => {
-    setSelectedCoupon(coupon);
-    setCouponModalOpen(false);
-  };
-
-  // =========================
+  // =====================================================
   // ENDEREÇO
-  // =========================
+  // =====================================================
 
   const [selectedAddress, setSelectedAddress] = useState(
     addressesMock?.find((address) => address.isDefault)?.id ||
@@ -97,12 +82,88 @@ export default function CheckoutForm({
     setUseNewAddress(false);
   };
 
-  // =========================
-  // CARTÃO
-  // =========================
+  // =====================================================
+  // CUPONS
+  // =====================================================
+
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+
+  // Agora podemos ter vários cupons.
+  const [selectedCoupons, setSelectedCoupons] = useState([]);
+
+  const toggleCoupon = (coupon) => {
+    setSelectedCoupons((current) => {
+      const alreadySelected = current.some(
+        (item) => item.id === coupon.id
+      );
+
+      if (alreadySelected) {
+        return current.filter((item) => item.id !== coupon.id);
+      }
+
+      return [...current, coupon];
+    });
+  };
+
+  const removeCoupon = (couponId) => {
+    setSelectedCoupons((current) =>
+      current.filter((coupon) => coupon.id !== couponId)
+    );
+  };
+
+  // =====================================================
+  // PAGAMENTO
+  // =====================================================
+
+  /*
+   * Cada forma de pagamento pode existir simultaneamente.
+   *
+   * Exemplo:
+   *
+   * Cartão 1 -> R$ 50
+   * Cartão 2 -> R$ 40
+   * Pix      -> R$ 30
+   * Boleto   -> R$ 20
+   */
+
+  const [paymentMethods, setPaymentMethods] = useState({
+    card: true,
+    pix: false,
+    boleto: false,
+  });
+
+  const [paymentAmounts, setPaymentAmounts] = useState({
+    pix: "",
+    boleto: "",
+  });
+
+  const togglePaymentMethod = (method) => {
+    setPaymentMethods((current) => ({
+      ...current,
+      [method]: !current[method],
+    }));
+  };
+
+  const updatePaymentAmount = (method, value) => {
+    setPaymentAmounts((current) => ({
+      ...current,
+      [method]: value,
+    }));
+  };
+
+  // =====================================================
+  // CARTÕES CADASTRADOS
+  // =====================================================
 
   const [selectedCards, setSelectedCards] = useState(
     cardsMock?.[0]?.id ? [cardsMock[0].id] : []
+  );
+
+  const [cardAmounts, setCardAmounts] = useState(
+    cardsMock?.reduce((acc, card) => {
+      acc[card.id] = "";
+      return acc;
+    }, {}) || {}
   );
 
   const [useNewCard, setUseNewCard] = useState(false);
@@ -123,14 +184,126 @@ export default function CheckoutForm({
   };
 
   const selectExistingCard = (id) => {
-    setSelectedCards((current) =>
-      current.includes(id)
-        ? current.filter((cardId) => cardId !== id)
-        : [...current, id]
-    );
+    setSelectedCards((current) => {
+      const alreadySelected = current.includes(id);
+
+      if (alreadySelected) {
+        setCardAmounts((amounts) => {
+          const updated = { ...amounts };
+          delete updated[id];
+          return updated;
+        });
+
+        return current.filter((cardId) => cardId !== id);
+      }
+
+      return [...current, id];
+    });
+
+    setPaymentMethods((current) => ({
+      ...current,
+      card: true,
+    }));
 
     setUseNewCard(false);
   };
+
+  const updateCardAmount = (cardId, value) => {
+    setCardAmounts((current) => ({
+      ...current,
+      [cardId]: value,
+    }));
+  };
+
+
+  const addNewCard = () => {
+    if (
+      !newCard.holderName ||
+      !newCard.number ||
+      !newCard.expiry ||
+      !newCard.cvv
+    ) {
+      return;
+    }
+
+    /*
+     * Mock local.
+     *
+     * O cartão é adicionado à seleção atual.
+     * Não existe API/database neste protótipo.
+     */
+
+    const generatedId = `new-card-${Date.now()}`;
+
+    const createdCard = {
+      id: generatedId,
+      brand: "Novo cartão",
+      last4: newCard.number.slice(-4),
+      holderName: newCard.holderName,
+      expiry: newCard.expiry,
+      isDefault: false,
+    };
+
+    setSelectedCards((current) => [
+      ...current,
+      createdCard.id,
+    ]);
+
+    setCardAmounts((current) => ({
+      ...current,
+      [createdCard.id]: "",
+    }));
+
+    /*
+     * Guardamos o cartão criado apenas no estado.
+     * Isso permite que ele seja usado imediatamente
+     * no pagamento combinado.
+     */
+    setTemporaryCards((current) => [
+      ...current,
+      createdCard,
+    ]);
+
+    setPaymentMethods((current) => ({
+      ...current,
+      card: true,
+    }));
+
+    setUseNewCard(false);
+
+    if (!saveCard) {
+      // No protótipo, o cartão continua disponível
+      // durante este checkout.
+    }
+
+    setNewCard({
+      holderName: "",
+      number: "",
+      expiry: "",
+      cvv: "",
+    });
+
+    setSaveCard(false);
+  };
+
+  const [temporaryCards, setTemporaryCards] = useState([]);
+
+  const allCards = [
+    ...(cardsMock || []),
+    ...temporaryCards,
+  ];
+
+  // =====================================================
+  // MODAL DE CUPONS
+  // =====================================================
+
+  const closeCouponModal = () => {
+    setCouponModalOpen(false);
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <div className="bg-white rounded-xl p-6 md:p-8">
@@ -152,7 +325,7 @@ export default function CheckoutForm({
             </p>
           </div>
 
-          {/* Dados do cliente */}
+          {/* DADOS DO CLIENTE */}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -206,7 +379,9 @@ export default function CheckoutForm({
 
           </div>
 
-          {/* ENDEREÇOS */}
+          {/* =====================================================
+              ENDEREÇO
+          ====================================================== */}
 
           <div className="border-t border-[#E4C7B7]/20 pt-5">
 
@@ -317,6 +492,8 @@ export default function CheckoutForm({
               </div>
             )}
 
+            {/* NOVO ENDEREÇO */}
+
             {useNewAddress && (
               <div className="space-y-4">
 
@@ -339,7 +516,9 @@ export default function CheckoutForm({
                     >
                       <option value="">Selecione</option>
                       <option value="Casa">Casa</option>
-                      <option value="Apartamento">Apartamento</option>
+                      <option value="Apartamento">
+                        Apartamento
+                      </option>
                       <option value="Sobrado">Sobrado</option>
                       <option value="Comercial">Comercial</option>
                     </select>
@@ -547,7 +726,9 @@ export default function CheckoutForm({
             </p>
           </div>
 
-          {/* CUPOM */}
+          {/* =====================================================
+              CUPONS
+          ====================================================== */}
 
           <div className="border border-[#E4C7B7]/30 rounded-lg p-4">
 
@@ -555,16 +736,19 @@ export default function CheckoutForm({
 
               <div className="flex items-center gap-2">
 
-                <Tag size={16} className="text-[#8B645A]" />
+                <Tag
+                  size={16}
+                  className="text-[#8B645A]"
+                />
 
                 <div>
                   <p className="text-xs font-bold text-[#56443F]">
-                    Cupom
+                    Cupons
                   </p>
 
                   <p className="text-[10px] text-[#A28776]">
-                    {selectedCoupon
-                      ? `${selectedCoupon.code} aplicado`
+                    {selectedCoupons.length > 0
+                      ? `${selectedCoupons.length} cupom(ns) aplicado(s)`
                       : "Consulte seus cupons disponíveis"}
                   </p>
                 </div>
@@ -576,107 +760,174 @@ export default function CheckoutForm({
                 onClick={() => setCouponModalOpen(true)}
                 className="text-[10px] font-bold text-[#8B645A]"
               >
-                {selectedCoupon
-                  ? "Alterar"
-                  : "Consultar cupons"}
+                Consultar cupons
               </button>
 
             </div>
 
-            {selectedCoupon && (
-              <div className="mt-3 flex items-center justify-between bg-[#E4C7B7]/10 rounded-lg px-3 py-2">
+            {selectedCoupons.length > 0 && (
+              <div className="mt-3 space-y-2">
 
-                <div>
-                  <span className="text-[10px] font-bold text-[#56443F]">
-                    {selectedCoupon.code}
-                  </span>
+                {selectedCoupons.map((coupon) => (
+                  <div
+                    key={coupon.id}
+                    className="flex items-center justify-between bg-[#E4C7B7]/10 rounded-lg px-3 py-2"
+                  >
 
-                  <p className="text-[9px] text-[#A28776]">
-                    {selectedCoupon.description}
-                  </p>
-                </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-[#56443F]">
+                        {coupon.code}
+                      </span>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedCoupon(null)}
-                  className="text-[10px] text-[#8B645A] font-bold"
-                >
-                  Remover
-                </button>
+                      <p className="text-[9px] text-[#A28776]">
+                        {coupon.description}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removeCoupon(coupon.id)
+                      }
+                      className="text-[10px] text-[#8B645A] font-bold"
+                    >
+                      Remover
+                    </button>
+
+                  </div>
+                ))}
 
               </div>
             )}
 
           </div>
 
-          {/* FORMAS DE PAGAMENTO */}
+          {/* =====================================================
+              FORMAS DE PAGAMENTO
+          ====================================================== */}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div>
 
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("card")}
-              className={`p-4 rounded-lg border text-xs font-bold ${
-                paymentMethod === "card"
-                  ? "border-[#8B645A] bg-[#E4C7B7]/10"
-                  : "border-[#E4C7B7]/30"
-              }`}
-            >
-              <CreditCard
-                size={18}
-                className="mx-auto mb-2"
-              />
-              Cartão
-            </button>
+            <div className="flex items-center justify-between mb-3">
 
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("pix")}
-              className={`p-4 rounded-lg border text-xs font-bold ${
-                paymentMethod === "pix"
-                  ? "border-[#8B645A] bg-[#E4C7B7]/10"
-                  : "border-[#E4C7B7]/30"
-              }`}
-            >
-              <QrCode
-                size={18}
-                className="mx-auto mb-2"
-              />
-              Pix
-            </button>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-[#56443F]">
+                  Formas de pagamento
+                </h3>
 
-            <button
-              type="button"
-              onClick={() => setPaymentMethod("boleto")}
-              className={`p-4 rounded-lg border text-xs font-bold ${
-                paymentMethod === "boleto"
-                  ? "border-[#8B645A] bg-[#E4C7B7]/10"
-                  : "border-[#E4C7B7]/30"
-              }`}
-            >
-              <FileText
-                size={18}
-                className="mx-auto mb-2"
-              />
-              Boleto
-            </button>
+                <p className="text-[10px] text-[#A28776] mt-1">
+                  Você pode combinar diferentes formas de pagamento.
+                </p>
+              </div>
+
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+
+              {/* CARTÃO */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  togglePaymentMethod("card")
+                }
+                className={`p-4 rounded-lg border text-xs font-bold ${
+                  paymentMethods.card
+                    ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                    : "border-[#E4C7B7]/30"
+                }`}
+              >
+                <CreditCard
+                  size={18}
+                  className="mx-auto mb-2"
+                />
+
+                Cartão
+
+                {paymentMethods.card && (
+                  <Check
+                    size={13}
+                    className="mx-auto mt-2 text-[#8B645A]"
+                  />
+                )}
+              </button>
+
+              {/* PIX */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  togglePaymentMethod("pix")
+                }
+                className={`p-4 rounded-lg border text-xs font-bold ${
+                  paymentMethods.pix
+                    ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                    : "border-[#E4C7B7]/30"
+                }`}
+              >
+                <QrCode
+                  size={18}
+                  className="mx-auto mb-2"
+                />
+
+                Pix
+
+                {paymentMethods.pix && (
+                  <Check
+                    size={13}
+                    className="mx-auto mt-2 text-[#8B645A]"
+                  />
+                )}
+              </button>
+
+              {/* BOLETO */}
+
+              <button
+                type="button"
+                onClick={() =>
+                  togglePaymentMethod("boleto")
+                }
+                className={`p-4 rounded-lg border text-xs font-bold ${
+                  paymentMethods.boleto
+                    ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                    : "border-[#E4C7B7]/30"
+                }`}
+              >
+                <FileText
+                  size={18}
+                  className="mx-auto mb-2"
+                />
+
+                Boleto
+
+                {paymentMethods.boleto && (
+                  <Check
+                    size={13}
+                    className="mx-auto mt-2 text-[#8B645A]"
+                  />
+                )}
+              </button>
+
+            </div>
 
           </div>
 
-          {/* CARTÃO */}
+          {/* =====================================================
+              CARTÕES
+          ====================================================== */}
 
-          {paymentMethod === "card" && (
+          {paymentMethods.card && (
             <div className="space-y-4">
 
               <div className="flex items-center justify-between">
 
                 <div>
                   <h3 className="font-serif text-lg font-bold text-[#56443F]">
-                    Cartão de crédito
+                    Cartões de crédito
                   </h3>
 
                   <p className="text-[10px] text-[#A28776] mt-1">
-                    Selecione um ou mais cartões.
+                    Selecione um ou mais cartões e defina o valor de cada um.
                   </p>
                 </div>
 
@@ -691,81 +942,132 @@ export default function CheckoutForm({
                   <Plus size={13} />
 
                   {useNewCard
-                    ? "Usar cartão cadastrado"
+                    ? "Cancelar"
                     : "Novo cartão"}
                 </button>
 
               </div>
 
+              {/* CARTÕES CADASTRADOS */}
+
               {!useNewCard && (
                 <div className="space-y-3">
 
-                  {cardsMock?.map((card) => (
-                    <button
-                      type="button"
-                      key={card.id}
-                      onClick={() =>
-                        selectExistingCard(card.id)
-                      }
-                      className={`w-full text-left border rounded-lg p-4 ${
-                        selectedCards.includes(card.id)
-                          ? "border-[#8B645A] bg-[#E4C7B7]/10"
-                          : "border-[#E4C7B7]/30"
-                      }`}
-                    >
+                  {allCards.map((card) => {
 
-                      <div className="flex justify-between">
+                    const selected =
+                      selectedCards.includes(card.id);
 
-                        <div className="flex items-center gap-2">
+                    return (
+                      <div
+                        key={card.id}
+                        className={`border rounded-lg p-4 transition-colors ${
+                          selected
+                            ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                            : "border-[#E4C7B7]/30"
+                        }`}
+                      >
 
-                          <div
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              selectedCards.includes(card.id)
-                                ? "border-[#8B645A]"
-                                : "border-[#C9B5A9]"
-                            }`}
-                          >
-                            {selectedCards.includes(card.id) && (
-                              <div className="w-2 h-2 rounded-full bg-[#8B645A]" />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            selectExistingCard(card.id)
+                          }
+                          className="w-full text-left"
+                        >
+
+                          <div className="flex justify-between">
+
+                            <div className="flex items-center gap-2">
+
+                              <div
+                                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                                  selected
+                                    ? "border-[#8B645A]"
+                                    : "border-[#C9B5A9]"
+                                }`}
+                              >
+                                {selected && (
+                                  <div className="w-2 h-2 rounded-full bg-[#8B645A]" />
+                                )}
+                              </div>
+
+                              <span className="text-xs font-bold text-[#56443F]">
+                                {card.brand}
+                              </span>
+
+                            </div>
+
+                            {card.isDefault && (
+                              <span className="text-[9px] font-bold text-[#8B645A]">
+                                Principal
+                              </span>
                             )}
+
                           </div>
 
-                          <span className="text-xs font-bold text-[#56443F]">
-                            {card.brand}
-                          </span>
+                          <div className="ml-6">
 
-                        </div>
+                            <p className="text-xs text-[#56443F] mt-2">
+                              •••• •••• •••• {card.last4}
+                            </p>
 
-                        {card.isDefault && (
-                          <span className="text-[9px] font-bold text-[#8B645A]">
-                            Principal
-                          </span>
+                            <div className="flex justify-between mt-2">
+
+                              <span className="text-[10px] text-[#A28776]">
+                                {card.holderName}
+                              </span>
+
+                              <span className="text-[10px] text-[#A28776]">
+                                {card.expiry}
+                              </span>
+
+                            </div>
+
+                          </div>
+
+                        </button>
+
+                        {/* VALOR DO CARTÃO */}
+
+                        {selected && (
+                          <div className="ml-6 mt-4">
+
+                            <label className="text-[9px] uppercase font-bold text-[#8B645A]">
+                              Quanto pagar neste cartão?
+                            </label>
+
+                            <div className="flex items-center mt-1">
+
+                              <span className="bg-[#FAF9F5] border border-r-0 border-[#E4C7B7]/40 rounded-l-lg px-3 py-3 text-xs text-[#A28776]">
+                                R$
+                              </span>
+
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={
+                                  cardAmounts[card.id] || ""
+                                }
+                                onChange={(e) =>
+                                  updateCardAmount(
+                                    card.id,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="0,00"
+                                className="w-full border border-[#E4C7B7]/40 rounded-r-lg p-3 text-xs"
+                              />
+
+                            </div>
+
+                          </div>
                         )}
 
                       </div>
-
-                      <div className="ml-6">
-
-                        <p className="text-xs text-[#56443F] mt-2">
-                          •••• •••• •••• {card.last4}
-                        </p>
-
-                        <div className="flex justify-between mt-2">
-
-                          <span className="text-[10px] text-[#A28776]">
-                            {card.holderName}
-                          </span>
-
-                          <span className="text-[10px] text-[#A28776]">
-                            {card.expiry}
-                          </span>
-
-                        </div>
-
-                      </div>
-
-                    </button>
-                  ))}
+                    );
+                  })}
 
                 </div>
               )}
@@ -773,7 +1075,17 @@ export default function CheckoutForm({
               {/* NOVO CARTÃO */}
 
               {useNewCard && (
-                <div className="space-y-4">
+                <div className="border border-[#E4C7B7]/30 rounded-lg p-4 space-y-4">
+
+                  <div>
+                    <h4 className="text-xs font-bold text-[#56443F]">
+                      Adicionar novo cartão
+                    </h4>
+
+                    <p className="text-[10px] text-[#A28776] mt-1">
+                      Cadastre o cartão e use-o neste pagamento.
+                    </p>
+                  </div>
 
                   <input
                     placeholder="Nome no cartão"
@@ -844,65 +1156,162 @@ export default function CheckoutForm({
 
                   </label>
 
+                  <button
+                    type="button"
+                    onClick={addNewCard}
+                    className="w-full bg-[#8B645A] hover:bg-[#56443F] text-white py-3 rounded-lg text-xs font-bold uppercase flex items-center justify-center gap-2"
+                  >
+                    <Plus size={14} />
+                    Adicionar cartão
+                  </button>
+
                 </div>
               )}
 
-              {selectedCards.length > 1 && !useNewCard && (
-                <p className="text-[10px] text-[#8B645A]">
-                  {selectedCards.length} cartões selecionados para pagamento.
+            </div>
+          )}
+
+          {/* =====================================================
+              PIX
+          ====================================================== */}
+
+          {paymentMethods.pix && (
+            <div className="border border-[#E4C7B7]/30 rounded-lg p-5">
+
+              <div className="flex items-center justify-between mb-4">
+
+                <div className="flex items-center gap-2">
+
+                  <QrCode
+                    size={18}
+                    className="text-[#8B645A]"
+                  />
+
+                  <div>
+                    <h3 className="text-xs font-bold text-[#56443F]">
+                      Pagamento via Pix
+                    </h3>
+
+                    <p className="text-[10px] text-[#A28776]">
+                      Defina quanto será pago via Pix.
+                    </p>
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="flex items-center">
+
+                <span className="bg-[#FAF9F5] border border-r-0 border-[#E4C7B7]/40 rounded-l-lg px-3 py-3 text-xs text-[#A28776]">
+                  R$
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmounts.pix}
+                  onChange={(e) =>
+                    updatePaymentAmount(
+                      "pix",
+                      e.target.value
+                    )
+                  }
+                  placeholder="0,00"
+                  className="w-full border border-[#E4C7B7]/40 rounded-r-lg p-3 text-xs"
+                />
+
+              </div>
+
+              <div className="bg-[#FAF9F5] rounded-lg p-5 text-center mt-4">
+
+                <QrCode
+                  size={70}
+                  className="mx-auto text-[#56443F] mb-3"
+                />
+
+                <p className="text-[10px] text-[#56443F]">
+                  O QR Code será disponibilizado após a confirmação.
                 </p>
-              )}
+
+              </div>
 
             </div>
           )}
 
-          {/* PIX */}
+          {/* =====================================================
+              BOLETO
+          ====================================================== */}
 
-          {paymentMethod === "pix" && (
-            <div className="bg-[#FAF9F5] rounded-lg p-5 text-center">
+          {paymentMethods.boleto && (
+            <div className="border border-[#E4C7B7]/30 rounded-lg p-5">
 
-              <QrCode
-                size={80}
-                className="mx-auto text-[#56443F] mb-4"
-              />
+              <div className="flex items-center justify-between mb-4">
 
-              <p className="text-xs text-[#56443F]">
-                Escaneie o QR Code para realizar o pagamento.
-              </p>
+                <div className="flex items-center gap-2">
 
-              {selectedCoupon && (
-                <p className="text-[10px] text-[#8B645A] mt-2">
-                  Cupom {selectedCoupon.code} aplicado.
+                  <FileText
+                    size={18}
+                    className="text-[#8B645A]"
+                  />
+
+                  <div>
+                    <h3 className="text-xs font-bold text-[#56443F]">
+                      Pagamento via boleto
+                    </h3>
+
+                    <p className="text-[10px] text-[#A28776]">
+                      Defina quanto será pago via boleto.
+                    </p>
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div className="flex items-center">
+
+                <span className="bg-[#FAF9F5] border border-r-0 border-[#E4C7B7]/40 rounded-l-lg px-3 py-3 text-xs text-[#A28776]">
+                  R$
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={paymentAmounts.boleto}
+                  onChange={(e) =>
+                    updatePaymentAmount(
+                      "boleto",
+                      e.target.value
+                    )
+                  }
+                  placeholder="0,00"
+                  className="w-full border border-[#E4C7B7]/40 rounded-r-lg p-3 text-xs"
+                />
+
+              </div>
+
+              <div className="bg-[#FAF9F5] rounded-lg p-5 text-center mt-4">
+
+                <FileText
+                  size={40}
+                  className="mx-auto text-[#56443F] mb-3"
+                />
+
+                <p className="text-[10px] font-bold text-[#56443F]">
+                  O boleto será gerado após a confirmação.
                 </p>
-              )}
+
+              </div>
 
             </div>
           )}
 
-          {/* BOLETO */}
-
-          {paymentMethod === "boleto" && (
-            <div className="bg-[#FAF9F5] rounded-lg p-5 text-center">
-
-              <FileText
-                size={40}
-                className="mx-auto text-[#56443F] mb-3"
-              />
-
-              <p className="text-xs font-bold text-[#56443F]">
-                O boleto será gerado após a confirmação.
-              </p>
-
-              {selectedCoupon && (
-                <p className="text-[10px] text-[#8B645A] mt-2">
-                  Cupom {selectedCoupon.code} aplicado.
-                </p>
-              )}
-
-            </div>
-          )}
-
-          {/* CONFIRMAR */}
+          {/* =====================================================
+              CONFIRMAR
+          ====================================================== */}
 
           <button
             type="button"
@@ -925,7 +1334,7 @@ export default function CheckoutForm({
 
           <div
             className="absolute inset-0 bg-black/40"
-            onClick={() => setCouponModalOpen(false)}
+            onClick={closeCouponModal}
           />
 
           <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -938,13 +1347,13 @@ export default function CheckoutForm({
                 </h3>
 
                 <p className="text-[10px] text-[#A28776] mt-1">
-                  Selecione um cupom disponível.
+                  Você pode selecionar mais de um cupom.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setCouponModalOpen(false)}
+                onClick={closeCouponModal}
                 className="p-2 rounded-lg hover:bg-[#E4C7B7]/20"
               >
                 <X size={18} />
@@ -954,56 +1363,76 @@ export default function CheckoutForm({
 
             <div className="space-y-3">
 
-              {couponsMock.map((coupon) => (
-                <button
-                  type="button"
-                  key={coupon.id}
-                  onClick={() => selectCoupon(coupon)}
-                  className={`w-full text-left border rounded-lg p-4 transition-colors ${
-                    selectedCoupon?.id === coupon.id
-                      ? "border-[#8B645A] bg-[#E4C7B7]/10"
-                      : "border-[#E4C7B7]/30 hover:bg-[#FAF9F5]"
-                  }`}
-                >
+              {couponsMock.map((coupon) => {
 
-                  <div className="flex items-start gap-3">
+                const selected =
+                  selectedCoupons.some(
+                    (item) => item.id === coupon.id
+                  );
 
-                    <div className="w-9 h-9 rounded-lg bg-[#E4C7B7]/20 flex items-center justify-center shrink-0">
-                      <Tag
-                        size={16}
-                        className="text-[#8B645A]"
-                      />
-                    </div>
+                return (
+                  <button
+                    type="button"
+                    key={coupon.id}
+                    onClick={() =>
+                      toggleCoupon(coupon)
+                    }
+                    className={`w-full text-left border rounded-lg p-4 transition-colors ${
+                      selected
+                        ? "border-[#8B645A] bg-[#E4C7B7]/10"
+                        : "border-[#E4C7B7]/30 hover:bg-[#FAF9F5]"
+                    }`}
+                  >
 
-                    <div className="flex-1">
+                    <div className="flex items-start gap-3">
 
-                      <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-lg bg-[#E4C7B7]/20 flex items-center justify-center shrink-0">
 
-                        <span className="text-xs font-bold text-[#56443F]">
-                          {coupon.code}
-                        </span>
-
-                        {selectedCoupon?.id === coupon.id && (
-                          <Check
-                            size={15}
-                            className="text-[#8B645A]"
-                          />
-                        )}
+                        <Tag
+                          size={16}
+                          className="text-[#8B645A]"
+                        />
 
                       </div>
 
-                      <p className="text-[10px] text-[#A28776] mt-1">
-                        {coupon.description}
-                      </p>
+                      <div className="flex-1">
+
+                        <div className="flex items-center justify-between">
+
+                          <span className="text-xs font-bold text-[#56443F]">
+                            {coupon.code}
+                          </span>
+
+                          {selected && (
+                            <Check
+                              size={15}
+                              className="text-[#8B645A]"
+                            />
+                          )}
+
+                        </div>
+
+                        <p className="text-[10px] text-[#A28776] mt-1">
+                          {coupon.description}
+                        </p>
+
+                      </div>
 
                     </div>
 
-                  </div>
-
-                </button>
-              ))}
+                  </button>
+                );
+              })}
 
             </div>
+
+            <button
+              type="button"
+              onClick={closeCouponModal}
+              className="w-full mt-5 bg-[#56443F] text-white py-3 rounded-lg text-xs font-bold uppercase"
+            >
+              Concluir
+            </button>
 
           </div>
 
@@ -1013,3 +1442,4 @@ export default function CheckoutForm({
     </div>
   );
 }
+
